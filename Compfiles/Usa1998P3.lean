@@ -67,7 +67,7 @@ lemma lemma1 (x : ℝ) (hx : x ∈ Set.Ioo 0 (Real.pi / 2)) :
   · exact hx.2
 
 lemma lemma2' (n : ℕ) : Finset.erase (Finset.range (n + 1)) n = Finset.range n :=
-by rw [←Nat.succ_eq_add_one, Finset.range_succ]; simp
+by rw [←Nat.succ_eq_add_one, Finset.range_add_one]; simp
 
 lemma lemma2 (n : ℕ) (f : ℕ → ℝ) :
     ∏ i ∈ Finset.range (n + 1), ∏ j ∈ Finset.erase (Finset.range (n + 1)) i, f j =
@@ -260,7 +260,7 @@ problem usa1998_p3
         have hkk : ∃ kk : ℝ, ↑k = kk := ⟨↑k, rfl⟩
         have ⟨kk, hkk'⟩ := hkk
         rw [hkk'] at hk
-        cases' lt_or_ge k 0 with hk' hk'
+        obtain hk' | hk' := lt_or_ge k 0
         · have hk2 : k ≤ -1 := Iff.mp Int.lt_add_one_iff hk'
           have : kk ≤ -1 := by rw [← hkk']; norm_cast
           nlinarith only [Real.pi_pos, ha1, hk2, this, hk]

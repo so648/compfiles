@@ -14,8 +14,8 @@ problem_file { tags := [.Combinatorics] }
 /-!
 # International Mathematical Olympiad 1971, Problem 5
 
-Prove that for every natural number m there exists a finite set S of
-points in the plane with the following property:
+Prove that for every natural number m there exists a nonempty finite
+set S of points in the plane with the following property:
 For every point s in S, there are exactly m points which are at a unit
 distance from s.
 -/
@@ -27,7 +27,8 @@ open scoped EuclideanGeometry
 abbrev Pt := EuclideanSpace ℝ (Fin 2)
 
 problem imo1971_p5 (m : ℕ) :
-    ∃ S : Set Pt, S.Finite ∧ ∀ s ∈ S, Nat.card {t | dist s t = 1} = m := by
+    ∃ S : Set Pt, S.Nonempty ∧ S.Finite ∧
+      ∀ s ∈ S, Nat.card {t | dist s t = 1} = m := by
   -- https://prase.cz/kalva/imo/isoln/isoln715.html
   sorry
 

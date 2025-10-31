@@ -25,13 +25,9 @@ snip begin
 
 lemma lemma0 {p : ℕ → Prop} (h : ∃! n, p (n + 1)) : (∃! n, 0 < n ∧ p n) := by
   obtain ⟨n, hn1, hn2⟩ := h
-  use n + 1
-  refine ⟨⟨Nat.succ_pos n, hn1⟩, ?_⟩
-  rintro m ⟨hm1, hm2⟩
-  have hm3 := hn2 (m - 1)
-  dsimp only at hm3
-  rw [Nat.sub_add_cancel hm1] at hm3
-  exact Nat.eq_add_of_sub_eq hm1 (hm3 hm2)
+  refine ⟨n + 1, ⟨Nat.succ_pos n, hn1⟩, fun m ⟨hm1, hm2⟩ ↦ ?_⟩
+  specialize hn2 (m - 1)
+  grind
 
 lemma lemma1 (s : ℕ → ℤ) (hs : ∀ i, s i < s (i + 1)) (z : ℤ) (hs0 : s 0 < z) :
     ∃! i, s i < z ∧ z ≤ s (i + 1) := by
@@ -41,9 +37,7 @@ lemma lemma1 (s : ℕ → ℤ) (hs : ∀ i, s i < s (i + 1)) (z : ℤ) (hs0 : s 
     have h5 : ∀ i, s 0 + i ≤ s i := fun i ↦ by
       induction' i with i ih
       · simp
-      · have h10 : (Nat.succ i : ℤ) = (i : ℤ) + 1 := by norm_cast
-        rw [h10, ←add_assoc]
-        exact add_le_of_add_le_right (hs i) ih
+      · grind
     use Int.toNat (z - s 0)
     rw [Set.mem_setOf_eq]
     have h8 := h5 (Int.toNat (z - s 0))
@@ -57,7 +51,7 @@ lemma lemma1 (s : ℕ → ℤ) (hs : ∀ i, s i < s (i + 1)) (z : ℤ) (hs0 : s 
   dsimp [S]
   refine ⟨⟨?_, ?_⟩, ?_⟩
   · have h4 := Nat.find_min h3 (m := (Nat.find h3 - 1))
-    cases' Nat.eq_zero_or_pos (Nat.find h3) with h5 h5
+    obtain h5 | h5 := Nat.eq_zero_or_pos (Nat.find h3)
     · rwa [h5]
     · have h6 : Nat.find h3 - 1 < Nat.find h3 :=
         Nat.sub_one_lt_of_le h5 Nat.le.refl
@@ -70,8 +64,7 @@ lemma lemma1 (s : ℕ → ℤ) (hs : ∀ i, s i < s (i + 1)) (z : ℤ) (hs0 : s 
     symm
     rw [Nat.find_eq_iff]
     refine ⟨hm2, ?_⟩
-    intro k hk
-    intro hkk
+    intro k hk hkk
     have h9 : s (k + 1) ≤ s m := (StrictMono.le_iff_le hmono).mpr hk
     simp only [Set.mem_setOf_eq] at hkk
     omega

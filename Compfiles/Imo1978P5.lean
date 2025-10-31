@@ -52,7 +52,7 @@ lemma aux_1
     intro x _
     rw [div_eq_mul_one_div, smul_eq_mul]
   let sf : Finset ℝ := Finset.image f₂ (Finset.Icc 1 n)
-  set sf_sorted : List ℝ := Finset.sort (fun (x₁ x₂) => x₁ ≤ x₂) sf with hf₁
+  set sf_sorted : List ℝ := sf.sort (fun (x₁ x₂) => x₁ ≤ x₂) with hf₁
   let f₃: ℕ → ℝ := fun k => sf_sorted.getD (k - 1) 0
   have hf₀: ∀ k, f₃ k = sf_sorted.getD (k - 1) 0 := by exact fun k => rfl
   have hf₂: sf = Finset.image f₂ s := by rfl
@@ -61,9 +61,9 @@ lemma aux_1
     have g₀: s = Icc 1 n := by rfl
     rw [g₀]
     refine Nat.le_induction ?_ ?_ n h₂
-    . simp
-    . simp
-  have hf₄: sf_sorted.length = n ∧ (sort (fun x₁ x₂ => x₁ ≤ x₂) (image f s)).length = n := by
+    · simp
+    · simp
+  have hf₄: sf_sorted.length = n ∧ (sort (image f s) (fun x₁ x₂ => x₁ ≤ x₂) ).length = n := by
     have hl₂: sf.card = n := by
       rw [← hl₁]
       refine Finset.card_image_of_injOn ?_
@@ -71,12 +71,12 @@ lemma aux_1
       have hf₅: f₂ = fun k => ((f k):ℝ) := by rfl
       contrapose! hpq
       rw [hf₅]
-      simp
+      simp only [ne_eq, Nat.cast_inj]
       refine h₁ p q ?_ ?_ hpq
-      . norm_cast at hp₀
+      · norm_cast at hp₀
         apply Finset.mem_Icc.mp at hp₀
         exact hp₀.1
-      . norm_cast at hq₀
+      · norm_cast at hq₀
         apply Finset.mem_Icc.mp at hq₀
         exact hq₀.1
     have hl₃: (image f s).card = n := by
@@ -85,16 +85,16 @@ lemma aux_1
       intro p hp₀ q hq₀ hpq
       contrapose! hpq
       refine h₁ p q ?_ ?_ hpq
-      . norm_cast at hp₀
+      · norm_cast at hp₀
         apply Finset.mem_Icc.mp at hp₀
         exact hp₀.1
-      . norm_cast at hq₀
+      · norm_cast at hq₀
         apply Finset.mem_Icc.mp at hq₀
         exact hq₀.1
     constructor
-    . rw [← hl₂]
+    · rw [← hl₂]
       exact length_sort fun x₁ x₂ => x₁ ≤ x₂
-    . rw [← hl₃]
+    · rw [← hl₃]
       exact length_sort fun x₁ x₂ => x₁ ≤ x₂
   have hf₅: ∀ a ∈ s, a - 1 < sf_sorted.length := by
     intro a ha₀
@@ -124,34 +124,34 @@ lemma aux_1
     have hb₁: b - 1 < sf_sorted.length := by exact hf₅ b hb₀
     rw [hf₁, hf₂]
     let sfo : Finset ℕ := image f s
-    have hso₂: ∀ k ∈ s, (sort (fun x₁ x₂ => x₁ ≤ x₂) (image f₂ s)).getD (k - 1) 0
-      = (sort (fun x₁ x₂ => x₁ ≤ x₂) (image f s)).getD (k - 1) 0 := by
+    have hso₂: ∀ k ∈ s, ((image f₂ s).sort (fun x₁ x₂ => x₁ ≤ x₂)).getD (k - 1) 0
+      = ((image f s).sort (fun x₁ x₂ => x₁ ≤ x₂)).getD (k - 1) 0 := by
       intro k hk₀
-      have hk₃: Function.Injective f₁ := by exact CharZero.cast_injective
+      have hk₃: Function.Injective f₁ := CharZero.cast_injective
       let fe : ℕ ↪ ℝ := {toFun := f₁ , inj' := hk₃}
-      have hk₅: (sort (fun x₁ x₂ => x₁ ≤ x₂) (image f₂ s)) =
-        List.map f₁ (sort (fun x₁ x₂ => x₁ ≤ x₂) (image f s)) := by
+      have hk₅: ((image f₂ s).sort (fun x₁ x₂ => x₁ ≤ x₂)) =
+        List.map f₁ ((image f s).sort (fun x₁ x₂ => x₁ ≤ x₂)) := by
         have hh₀: fe = {toFun := f₁ , inj' := hk₃} := by rfl
         have hh₁: (image f₂ s) = Finset.map fe (image f s) := by
           rw [hf₃, hh₀]
           refine Finset.induction_on_min s ?_ ?_
-          . simp
-          . intro z sz _ hz₁
-            simp
+          · simp
+          · intro z sz _ hz₁
+            simp only [image_insert, map_insert, Function.Embedding.coeFn_mk]
             exact congrArg (insert ↑(f z)) hz₁
         rw [hh₁]
         refine Finset.induction_on_min (image f s) ?_ ?_
-        . simp
-        . intro z sz hz₀ hz₁
+        · simp
+        · intro z sz hz₀ hz₁
           have hz₂: z ∉ sz := by
             contrapose! hz₀
             use z
-          simp
+          simp only [map_insert]
           have hz₃: fe z = (z:ℝ) := by exact rfl
           rw [hz₃]
           have hz₄: ∀ b ∈ sz, (fun x₁ x₂ => x₁ ≤ x₂) z b := by
-            simp
-            exact fun b a => Nat.le_of_succ_le (hz₀ b a)
+            intro b a
+            exact Nat.le_of_succ_le (hz₀ b a)
           have hz₅: ∀ b ∈ map fe sz, (fun x₁ x₂ => x₁ ≤ x₂) (↑z:ℝ) b := by
             intro y hy₀
             have hy₁: ∃ d:ℕ, d ∈ sz ∧ (d:ℝ) = y := by exact Multiset.mem_map.mp hy₀
@@ -160,22 +160,22 @@ lemma aux_1
             rw [← hd₁]
             exact Nat.cast_lt.mpr (hz₀ d hd₀)
           have hz₆: (↑z:ℝ) ∉ map fe sz := by
-            simp
+            simp only [mem_map, not_exists, not_and]
             intro x hx₀
             rw [hh₀]
-            simp
+            simp only [Function.Embedding.coeFn_mk]
             have hx₁: ∀ x:ℕ, f₁ x = (x:ℝ) := by exact fun x => rfl
             rw [hx₁]
             norm_cast
             exact Nat.ne_of_lt' (hz₀ x hx₀)
           rw [Finset.sort_insert (fun x₁ x₂ => x₁ ≤ x₂) hz₄ hz₂]
           rw [Finset.sort_insert (fun x₁ x₂ => x₁ ≤ x₂) hz₅ hz₆]
-          simp
+          simp only [List.map_cons, List.cons.injEq]
           exact List.cons_eq_cons.mp (congrArg (List.cons ↑z) hz₁)
-      have hk₁: k - 1 < (List.map f₁ (sort (fun x₁ x₂ => x₁ ≤ x₂) sfo)).length := by
+      have hk₁: k - 1 < (List.map f₁ (sfo.sort (fun x₁ x₂ => x₁ ≤ x₂))).length := by
         rw [← hk₅]
         exact hf₅ k hk₀
-      have hk₂: k - 1 < (sort (fun x₁ x₂ => x₁ ≤ x₂) (sfo)).length := by
+      have hk₂: k - 1 < (sfo.sort (fun x₁ x₂ => x₁ ≤ x₂)).length := by
         rw [hf₄.2, ← hf₄.1]
         exact hf₅ k hk₀
       rw [hk₅, List.getD_eq_getElem _ 0 hk₁, List.getD_eq_getElem _ 0 hk₂]
@@ -183,23 +183,23 @@ lemma aux_1
     rw [hso₂ a ha₀, hso₂ b hb₀]
     norm_cast
     refine Nat.succ_le_of_lt ?_
-    have ha₂: a - 1 < (sort (fun x₁ x₂ => x₁ ≤ x₂) (image f s)).length := by
+    have ha₂: a - 1 < ((image f s).sort (fun x₁ x₂ => x₁ ≤ x₂)).length := by
       rw [hf₄.2, ← hf₄.1]
       exact ha₁
-    have hb₂: b - 1 < (sort (fun x₁ x₂ => x₁ ≤ x₂) (image f s)).length := by
+    have hb₂: b - 1 < ((image f s).sort (fun x₁ x₂ => x₁ ≤ x₂)).length := by
       rw [hf₄.2, ← hf₄.1]
       exact hb₁
     rw [List.getD_eq_getElem _ 0 ha₂, List.getD_eq_getElem _ 0 hb₂]
-    have hso₄: List.Sorted (fun x₁ x₂ => x₁ < x₂) (sort (fun x₁ x₂ => x₁ ≤ x₂) (image f s)) := by
+    have hso₄: List.Sorted (fun x₁ x₂ => x₁ < x₂) ((image f s).sort (fun x₁ x₂ => x₁ ≤ x₂)) := by
       exact Finset.sort_sorted_lt (image f s)
     refine List.Sorted.rel_get_of_lt hso₄ ?_
-    simp
+    simp only [Fin.mk_lt_mk]
     apply Finset.mem_Icc.mp at ha₀
     apply Finset.mem_Icc.mp at hb₀
-    omega
+    cutsat
   have hρ: ∃ ρ: Equiv.Perm ℕ, (∀ a ∈ Icc 1 n, f₂ a = f₃ (ρ a)) ∧ ∀ a ∉ Icc 1 n, ρ a = a := by
     let so : Finset ℕ := image f (Icc 1 n)
-    let lo_sorted : List ℕ := sort (fun x₁ x₂ => x₁ ≤ x₂) so
+    let lo_sorted : List ℕ := so.sort (fun x₁ x₂ => x₁ ≤ x₂)
     let sl := List.range' 1 n 1
     have hs₀: sl = List.range' 1 n 1 := by rfl
     let lo : List ℕ := List.map f sl
@@ -216,54 +216,25 @@ lemma aux_1
     have gg₅: ∀ k ∈ s, f₆ k = f₅ k := by
       intro k hk₀
       rw [gg₂]
-      simp
+      simp only [ite_eq_left_iff]
       intro hk₁
       exact False.elim (hk₁ hk₀)
-    have gg₆: ∀ k ∈ s, f₉ k = f₈ k := by
-      intro k hk₀
-      rw [gg₄]
-      simp
-      intro hk₁
-      exact False.elim (hk₁ hk₀)
-    have gg₇: ∀ k ∉ s, f₆ k = k := by
-      intro k hk₀
-      rw [gg₂]
-      simp
-      intro hk₁
-      exact False.elim (hk₀ hk₁)
-    have gg₈: ∀ k ∉ s, f₉ k = k := by
-      intro k hk₀
-      rw [gg₄]
-      simp
-      intro hk₁
-      exact False.elim (hk₀ hk₁)
-    have gg₉: lo_sorted.length = n := by
-      have g₀: so.card = n := by
-        rw [← hl₁]
-        refine Finset.card_image_of_injOn ?_
-        intro p hp₀ q hq₀ hpq
-        contrapose! hpq
-        refine h₁ p q ?_ ?_ hpq
-        . norm_cast at hp₀
-          apply Finset.mem_Icc.mp at hp₀
-          exact hp₀.1
-        . norm_cast at hq₀
-          apply Finset.mem_Icc.mp at hq₀
-          exact hq₀.1
-      rw [← g₀]
-      exact length_sort fun x₁ x₂ => x₁ ≤ x₂
+    have gg₆: ∀ k ∈ s, f₉ k = f₈ k := by grind
+    have gg₇: ∀ k ∉ s, f₆ k = k := by grind
+    have gg₈: ∀ k ∉ s, f₉ k = k := by grind
+    have gg₉: lo_sorted.length = n := by grind
     have gg₁₀: ∀ k ∈ s, f₅ k ∈ s := by
       intro k hk₀
       refine Finset.mem_Icc.mpr ?_
       constructor
-      . exact Nat.le_add_left 1 (List.findIdx (fun y => decide (y = f k)) lo_sorted)
-      . have hk₁: List.findIdx (fun x => decide (x = f k)) lo_sorted < lo_sorted.length := by
+      · exact Nat.le_add_left 1 (List.findIdx (fun y => decide (y = f k)) lo_sorted)
+      · have hk₁: List.findIdx (fun x => decide (x = f k)) lo_sorted < lo_sorted.length := by
           refine List.findIdx_lt_length.mpr ?_
           use (f k)
           constructor
-          . refine (mem_sort fun x₁ x₂ => x₁ ≤ x₂).mpr ?_
+          · refine (mem_sort fun x₁ x₂ => x₁ ≤ x₂).mpr ?_
             exact mem_image_of_mem f hk₀
-          . exact of_decide_eq_self_eq_true (f k)
+          · exact of_decide_eq_self_eq_true (f k)
         rw [gg₉] at hk₁
         refine Nat.le_of_lt_succ ?_
         exact Nat.add_lt_of_lt_sub hk₁
@@ -275,29 +246,29 @@ lemma aux_1
       intro k hk₀
       refine Finset.mem_Icc.mpr ?_
       constructor
-      . exact Nat.le_add_left 1 (List.findIdx (fun x => decide (x = f₄ k)) lo)
-      . have hk₁: List.findIdx (fun x => decide (x = f₄ k)) lo < lo.length := by
+      · exact Nat.le_add_left 1 (List.findIdx (fun x => decide (x = f₄ k)) lo)
+      · have hk₁: List.findIdx (fun x => decide (x = f₄ k)) lo < lo.length := by
           refine List.findIdx_lt_length.mpr ?_
           use (f₄ k)
           constructor
-          . have hk₁: k - 1 < lo.length := by
+          · have hk₁: k - 1 < lo.length := by
               rw [gg₁₁]
               apply Finset.mem_Icc.mp at hk₀
               exact Nat.sub_one_lt_of_le hk₀.1 hk₀.2
-            have hk₂: lo_sorted = sort (fun x₁ x₂ => x₁ ≤ x₂) so := by rfl
+            have hk₂: lo_sorted = so.sort (fun x₁ x₂ => x₁ ≤ x₂) := by rfl
             have hk₃: lo = List.map f sl := by rfl
             rw [gg₀, hk₂, hk₃]
             ring_nf
             have hk₄: so = image f (Icc 1 n) := by rfl
             rw [gg₁₁, ← gg₉, hk₂, hk₄] at hk₁
             rw [List.getD_eq_getElem _ 0 hk₁]
-            let j : ℕ := (sort (fun x₁ x₂ => x₁ ≤ x₂) (image f (Icc 1 n)))[k - 1]
-            have hj₀: j = (sort (fun x₁ x₂ => x₁ ≤ x₂) (image f (Icc 1 n)))[k - 1] := by rfl
-            have hj₁: j ∈ (sort (fun x₁ x₂ => x₁ ≤ x₂) (image f (Icc 1 n))) := by exact List.getElem_mem hk₁
+            let j : ℕ := ((image f (Icc 1 n)).sort (fun x₁ x₂ => x₁ ≤ x₂))[k - 1]
+            have hj₀: j = ((image f (Icc 1 n)).sort (fun x₁ x₂ => x₁ ≤ x₂))[k - 1] := by rfl
+            have hj₁: j ∈ ((image f (Icc 1 n)).sort (fun x₁ x₂ => x₁ ≤ x₂)) := List.getElem_mem hk₁
             have hj₂: j ∈ image f s := by exact (mem_sort fun x₁ x₂ => x₁ ≤ x₂).mp hj₁
             rw [← hj₀]
             exact List.mem_dedup.mp hj₂
-          . exact of_decide_eq_self_eq_true (f₄ k)
+          · exact of_decide_eq_self_eq_true (f₄ k)
         rw [gg₁₁] at hk₁
         refine Nat.le_of_lt_succ ?_
         exact Nat.add_lt_of_lt_sub hk₁
@@ -308,24 +279,24 @@ lemma aux_1
       have hh₁: (image f₂ s) = Finset.map fe (image f s) := by
         rw [hf₃, hh₀]
         refine Finset.induction_on_min s ?_ ?_
-        . simp
-        . intro z sz _ hz₁
-          simp
+        · simp
+        · intro z sz _ hz₁
+          simp only [image_insert, map_insert, Function.Embedding.coeFn_mk]
           exact congrArg (insert ↑(f z)) hz₁
-      have g₁: lo_sorted = sort (fun x₁ x₂ => x₁ ≤ x₂) so := by rfl
+      have g₁: lo_sorted = so.sort (fun x₁ x₂ => x₁ ≤ x₂) := by rfl
       have g₂: so = image f s := by rfl
       rw [hf₁, hf₂, g₁, g₂, hh₁]
       refine Finset.induction_on_min (image f s) ?_ ?_
-      . simp
-      . intro z sz hz₀ hz₁
+      · simp
+      · intro z sz hz₀ hz₁
         have hz₂: z ∉ sz := by
           contrapose! hz₀
           use z
-        simp
-        have hz₃: fe z = (z:ℝ) := by exact rfl
+        simp only [map_insert]
+        have hz₃ : fe z = (z:ℝ) := rfl
         rw [hz₃]
         have hz₄: ∀ b ∈ sz, (fun x₁ x₂ => x₁ ≤ x₂) z b := by
-          simp
+          simp only
           exact fun b a => Nat.le_of_succ_le (hz₀ b a)
         have hz₅: ∀ b ∈ map fe sz, (fun x₁ x₂ => x₁ ≤ x₂) (↑z:ℝ) b := by
           intro y hy₀
@@ -335,21 +306,21 @@ lemma aux_1
           rw [← hd₁]
           exact Nat.cast_lt.mpr (hz₀ d hd₀)
         have hz₆: (↑z:ℝ) ∉ map fe sz := by
-          simp
+          simp only [mem_map, not_exists, not_and]
           intro x hx₀
           rw [hh₀]
-          simp
+          simp only [Function.Embedding.coeFn_mk]
           have hx₁: ∀ x:ℕ, f₁ x = (x:ℝ) := by exact fun x => rfl
           rw [hx₁]
           norm_cast
           exact Nat.ne_of_lt' (hz₀ x hx₀)
         rw [Finset.sort_insert (fun x₁ x₂ => x₁ ≤ x₂) hz₄ hz₂]
         rw [Finset.sort_insert (fun x₁ x₂ => x₁ ≤ x₂) hz₅ hz₆]
-        simp
+        simp only [List.map_cons, List.cons.injEq]
         exact List.cons_eq_cons.mp (congrArg (List.cons ↑z) hz₁)
     have gg₁₄: ∀ x y, x ∈ s → y ∈ s → f₄ x = f₄ y → x = y := by
       intro x y hx₀ hy₀ hx₁
-      have hx₂: List.Nodup lo_sorted := by exact sort_nodup (fun x₁ x₂ => x₁ ≤ x₂) so
+      have hx₂: List.Nodup lo_sorted := by exact sort_nodup so (fun x₁ x₂ => x₁ ≤ x₂)
       rw [gg₀] at hx₁
       ring_nf at hx₁
       have hx₃: x - 1 < lo_sorted.length := by
@@ -371,12 +342,12 @@ lemma aux_1
       intro k hk₀
       have g₀: f₆ k = f₅ k := gg₅ k hk₀
       rw [g₀, gg₁]
-      simp
+      simp only
       let j := List.findIdx (fun x => decide (x = f k)) lo_sorted
       have hj₀: j + 1 = List.findIdx (fun x => decide (x = f k)) lo_sorted + 1 := by rfl
       have hj₁: List.findIdx (fun x => decide (x = f k)) lo_sorted < lo_sorted.length := by
         refine List.findIdx_lt_length.mpr ?_
-        simp
+        simp only [decide_eq_true_eq, exists_eq_right]
         refine (mem_sort fun x₁ x₂ => x₁ ≤ x₂).mpr ?_
         exact mem_image_of_mem f hk₀
       have hj₂: f₄ (j + 1) = f k := by
@@ -406,7 +377,7 @@ lemma aux_1
         exact hy₃
       have gg₁₆: lo = List.map f sl := by rfl
       constructor
-      . intro hx₁
+      · intro hx₁
         have hx₂: f₄ (f₆ y) = f y := by exact hh₀ y hy₀
         have hx₃: x = f₅ y := by
           rw [← hx₁, gg₅ y hy₀] at hx₂
@@ -417,30 +388,31 @@ lemma aux_1
         have hx₄: x - 1 < lo_sorted.length := by
           rw [gg₉]
           exact Nat.sub_one_lt_of_le hx₀.1 hx₀.2
-        have hx₅: List.findIdx (fun x => decide (x = f y)) lo_sorted = x - 1 := by exact Nat.eq_sub_of_add_eq (id (Eq.symm hx₃))
+        have hx₅: List.findIdx (fun x => decide (x = f y)) lo_sorted = x - 1 :=
+          Nat.eq_sub_of_add_eq hx₃.symm
         apply (List.findIdx_eq hx₄).mp at hx₅
-        cases' hx₅ with hx₅ hx₆
+        obtain ⟨hx₅, hx₆⟩ := hx₅
         simp at hx₅ hx₆
         rw [gg₃]
-        simp
+        simp only
         rw [← Nat.sub_add_cancel hy₀.1]
         refine add_right_cancel_iff.mpr ?_
         refine (List.findIdx_eq hy₁).mpr ?_
-        simp
+        simp only [decide_eq_true_eq, decide_eq_false_iff_not]
         constructor
-        . rw [Nat.sub_add_cancel hy₀.1]
+        · rw [Nat.sub_add_cancel hy₀.1]
           apply Finset.mem_Icc.mpr at hy₀
           rw [← gg₅ y hy₀, hh₀ y hy₀]
           rw [← List.getD_eq_getElem lo 0 hy₁, gg₁₆]
           rw [List.getD_eq_getElem (List.map f sl) 0 hy₁]
-          simp
+          simp only [List.getElem_map]
           refine congr rfl ?_
           have g₀: sl = List.range' 1 n 1 := by rfl
           rw [← List.getD_eq_getElem sl 0 hy₄, g₀]
           rw [List.getD_eq_getElem (List.range' 1 n 1) 0 hy₃]
           rw [List.getElem_range' hy₃]
-          omega
-        . intro j hj₀
+          cutsat
+        · intro j hj₀
           rw [Nat.sub_add_cancel hy₀.1]
           apply Finset.mem_Icc.mpr at hy₀
           rw [← gg₅ y hy₀, hh₀ y hy₀]
@@ -450,32 +422,33 @@ lemma aux_1
           have hj₄: j < (List.range' 1 n 1).length := by exact Nat.lt_trans hj₀ hy₃
           rw [← List.getD_eq_getElem lo 0 hj₁, gg₁₆]
           rw [List.getD_eq_getElem (List.map f sl) 0 hj₂]
-          simp
+          simp only [List.getElem_map, ne_eq]
           refine h₁ sl[j] y ?_ ?_ ?_
-          . have ht: ∀ t ∈ sl, 1 ≤ t := by
+          · have ht: ∀ t ∈ sl, 1 ≤ t := by
               intro t ht₀
               apply List.mem_range'.mp at ht₀
               omega
             refine ht sl[j] ?_
             exact List.getElem_mem hj₄
-          . omega
-          . rw [List.getElem_range' hj₃]
+          · omega
+          · rw [List.getElem_range' hj₃]
             omega
-      . intro hx₁
+      · intro hx₁
         have hx₃: f (f₈ x) = f₄ x := by
           rw [hx₁]
           rw [gg₃] at hx₁
-          simp at hx₁
-          have hy₅: List.findIdx (fun x_1 => decide (x_1 = f₄ x)) lo = y - 1 := by exact Nat.eq_sub_of_add_eq hx₁
+          simp only at hx₁
+          have hy₅: List.findIdx (fun x_1 => decide (x_1 = f₄ x)) lo = y - 1 :=
+            Nat.eq_sub_of_add_eq hx₁
           apply (List.findIdx_eq hy₁).mp at hy₅
-          cases' hy₅ with hy₅ hy₆
-          simp at hy₅ hy₆
+          obtain ⟨hy₅, hy₆⟩ := hy₅
+          simp only [decide_eq_true_eq, decide_eq_false_iff_not] at hy₅ hy₆
           rw [← hy₅]
           have hy₇: lo[y - 1] = (List.map f sl)[y - 1] := by
             rw [← List.getD_eq_getElem (List.map f sl) 0 hy₁, ← gg₁₆]
           rw [hy₇]
           apply Finset.mem_Icc.mp at hy₀
-          simp
+          simp only [List.getElem_map]
           refine congr rfl ?_
           have g₀: sl = List.range' 1 n 1 := by rfl
           rw [← List.getD_eq_getElem sl 0 hy₄, g₀]
@@ -487,9 +460,9 @@ lemma aux_1
     have hh₁: ∀ x, (f₉ ∘ f₆) x = x := by
       intro x
       rw [Function.comp_def]
-      simp
+      simp only
       by_cases hx₀: x ∈ s
-      . have g₀: f₅ x ∈ s := by exact gg₁₀ x hx₀
+      · have g₀: f₅ x ∈ s := by exact gg₁₀ x hx₀
         rw [gg₅ x hx₀, gg₆ (f₅ x) g₀,]
         let j := f₅ x
         have hj₀: j = f₅ x := by rfl
@@ -497,7 +470,7 @@ lemma aux_1
           rw [hj₀, ← gg₅ x hx₀]
           exact hh₀ x hx₀
         exact (gg₁₅ j x (gg₁₀ x hx₀) hx₀).mp hj₁
-      . have g₀: f₆ x = x := by exact gg₇ x hx₀
+      · have g₀: f₆ x = x := by exact gg₇ x hx₀
         have g₁: f₉ x = x := by exact gg₈ x hx₀
         rw [g₀, g₁]
     have hh₂: Function.LeftInverse f₉ f₆ := by
@@ -508,22 +481,22 @@ lemma aux_1
       have hh₄: ∀ x, (f₆ ∘ f₉) x = x := by
         intro x
         rw [Function.comp_def]
-        simp
+        simp only
         by_cases hx₀: x ∈ s
-        . have g₀: f₈ x ∈ s := by exact gg₁₂ x hx₀
+        · have g₀: f₈ x ∈ s := by exact gg₁₂ x hx₀
           rw [gg₆ x hx₀, gg₅ (f₈ x) g₀,]
           let j := f₈ x
           have hj₀: j = f₈ x := by rfl
           have hj₁: f₄ x = f j := by exact (gg₁₅ x j hx₀ (gg₁₂ x hx₀)).mpr hj₀.symm
           rw [← hj₀]
-          have hj₂: j ∈ s := by exact gg₁₂ x hx₀
+          have hj₂: j ∈ s := gg₁₂ x hx₀
           have hj₃: f₄ (f₅ j) = f j := by
             rw [← gg₅ j hj₂]
             exact hh₀ j hj₂
           rw [← hj₁] at hj₃
           exact gg₁₄ (f₅ j) x (gg₁₀ j g₀) hx₀ hj₃
-        . have g₀: f₉ x = x := by exact gg₈ x hx₀
-          have g₁: f₆ x = x := by exact gg₇ x hx₀
+        · have g₀: f₉ x = x := gg₈ x hx₀
+          have g₁: f₆ x = x := gg₇ x hx₀
           rw [g₀, g₁]
       exact Function.RightInverse.id hh₄
     set ρ : Equiv.Perm ℕ := { toFun := f₆, invFun := f₉, left_inv := hh₂, right_inv := hh₃ }
@@ -535,7 +508,7 @@ lemma aux_1
       exact hk₁
     use ρ
     constructor
-    . intro a ha₀
+    · intro a ha₀
       have ha₁: f₂ a = ((f a):ℝ) := by rfl
       have ha₂: f₃ (ρ a) = ((f₄ (ρ a)):ℝ) := by
         have ha₂: f₃ (ρ a) = sf_sorted.getD (ρ a - 1) 0 := by rfl
@@ -557,7 +530,7 @@ lemma aux_1
       norm_cast
       rw [← hh₀ a ha₀]
       exact rfl
-    . intro a ha₀
+    · intro a ha₀
       exact gg₇ a ha₀
   obtain ⟨ρ, hρ₀, hρ₁⟩ := hρ
   have h₆: ∑ k ∈ Icc 1 n, f₃ k • f₀ k ≤ ∑ k ∈ Icc 1 n, f₂ k • f₀ k := by
@@ -567,27 +540,27 @@ lemma aux_1
       rw [hρ₀ x hx₀]
     rw [h₆₀]
     refine AntivaryOn.sum_smul_le_sum_comp_perm_smul ?hfg ?hσ
-    . refine MonotoneOn.antivaryOn ?hfg.hf ?hfg.hg
-      . refine monotoneOn_iff_forall_lt.mpr ?hfg.hf.a
+    · refine MonotoneOn.antivaryOn ?hfg.hf ?hfg.hg
+      · refine monotoneOn_iff_forall_lt.mpr ?hfg.hf.a
         norm_cast
         intro a ha₀ b hb₀ ha₁
         have ha₂: f₃ a + 1 ≤ f₃ b := by exact hf₇ a ha₀ b hb₀ ha₁
         refine le_trans ?_ ha₂
         refine le_of_lt ?_
         exact lt_add_one (f₃ a)
-      . refine antitoneOn_iff_forall_lt.mpr ?hfg.hg.a
+      · refine antitoneOn_iff_forall_lt.mpr ?hfg.hg.a
         norm_cast
         intro a ha₀ b hb₀ ha₁
         refine (one_div_le_one_div ?_ ?_).mpr ?_
-        . apply Finset.mem_Icc.mp at hb₀
+        · apply Finset.mem_Icc.mp at hb₀
           norm_cast
           exact Nat.pow_pos hb₀.1
-        . apply Finset.mem_Icc.mp at ha₀
+        · apply Finset.mem_Icc.mp at ha₀
           norm_cast
           exact Nat.pow_pos ha₀.1
-        . norm_cast
+        · norm_cast
           exact Nat.pow_le_pow_left (le_of_lt ha₁) 2
-    . intro x hx₀
+    · intro x hx₀
       contrapose! hx₀
       exact fun a => a (hρ₁ x hx₀)
   have h₇: ∑ k ∈ Icc 1 n, f₁ k • f₀ k ≤ ∑ k ∈ Icc 1 n, f₃ k • f₀ k := by
@@ -607,22 +580,18 @@ lemma aux_1
     dsimp only
     have hi: x ≤ n → (↑x:ℝ) ≤ f₃ x := by
       refine Nat.le_induction ?_ ?_ x hx₁
-      . intro _
+      · intro _
         norm_cast
         refine hf₆ 1 ?_
         exact left_mem_Icc.mpr h₂
-      . intro y hy₀ hy₁ hy₂
+      · intro y hy₀ hy₁ hy₂
         have hy₃: y ≤ n := by omega
         have hy₄: f₃ y + 1 ≤ f₃ (y + 1) := by
           refine hf₇ y ?_ (y + 1) ?_ (by omega)
-          . refine Finset.mem_Icc.mpr ?_
-            exact ⟨hy₀, hy₃⟩
-          . refine Finset.mem_Icc.mpr ?_
-            constructor
-            . exact Nat.le_add_right_of_le hy₀
-            . exact hy₂
+          · exact Finset.mem_Icc.mpr ⟨hy₀, hy₃⟩
+          · refine Finset.mem_Icc.mpr ⟨Nat.le_add_right_of_le hy₀, hy₂⟩
         refine le_trans ?_ hy₄
-        simp
+        simp only [Nat.cast_add, Nat.cast_one, add_le_add_iff_right]
         exact hy₁ hy₃
     refine hi ?_
     apply Finset.mem_Icc.mp at hx₀
@@ -648,3 +617,5 @@ problem imo_1978_p5
   apply Finset.mem_Icc.mp at hx₀
   norm_cast
   omega
+
+end Imo1978P5

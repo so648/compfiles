@@ -41,7 +41,7 @@ lemma f_injective
   have h2 : ∀ n : ℕ+, f^[n] p = f^[n] q := by
     intro n
     obtain ⟨n, hn⟩ := n
-    cases' n with n <;> aesop
+    cases n <;> aesop
 
   have h3 : f^[f p] p = f^[f q] q := by rw[hpq]; exact h2 (f q)
 
@@ -153,20 +153,20 @@ lemma lemma_3
 
   have h1 := hf m2
   rw [sq] at h1
-  obtain h2 | h2 := Classical.em (f^[2] m2 < m2)
+  by_cases h2 : f^[2] m2 < m2
   · let k := f^[2] m2
     have hkodd : Odd k.val := (pnat_odd_mul h1 hm3).2
     have h3 : f k = k := ih k h2 hkodd
     rw[lemma_1 f hf k m2 2 rfl h3]
     exact h3
-  · obtain h4 | h4 := Classical.em (f^[f m2] m2 < m2)
+  · by_cases h4 : f^[f m2] m2 < m2
     · let k := f^[f m2] m2
       have hkodd : Odd k.val := (pnat_odd_mul h1 hm3).1
       have h3 : f k = k := ih k h4 hkodd
       rw[lemma_1 f hf k m2 _ rfl h3]
       exact h3
     · have h5 : f^[2] m2 = m2 ∧ f^[f m2] m2 = m2 := by
-         simp at h2 h4
+         simp only [Function.iterate_succ, Function.comp_apply, not_lt] at h2 h4
          by_contra H
          rw [not_and_or] at H
          obtain h9 | h9 := H
@@ -229,8 +229,8 @@ problem usa2019_p1 (m : ℕ+) :
           rw [Function.iterate_mul, Function.iterate_fixed hmsq]
           exact (sq m).symm
         · have hn : f n = n := by
-            simp [hf]
-            simp_rw[eq_false hne']
+            simp only [hf]
+            simp_rw [eq_false hne']
             simp only [ite_false, ite_eq_right_iff]; intro h2; exact (hne h2).elim
           rw [hn, hn]
           rw [Function.iterate_fixed hn]

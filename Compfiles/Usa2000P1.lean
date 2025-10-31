@@ -56,8 +56,7 @@ problem usa2000_p1 :
       rw [zero_add]
       have h4 : -((n : ℝ) + 1) = - (n : ℝ) - 1 := by ring
       rw [h4, div_eq_mul_one_div]
-      have h5 : (1:ℝ) / 2 = 2 ^ (-(1:ℝ)) := by
-         rw [Real.rpow_neg (by norm_num)]; norm_num
+      have h5 : (1:ℝ) / 2 = 2 ^ (-(1:ℝ)) := by norm_num
       rw [h5, ←Real.rpow_add h2p]
       congr
     rw [h3] at h2
@@ -80,8 +79,7 @@ problem usa2000_p1 :
       rw [zero_add]
       have h4 : -((n : ℝ) + 1) = - (n : ℝ) - 1 := by ring
       rw [h4, div_eq_mul_one_div]
-      have h5 : (1:ℝ) / 2 = 2 ^ (-(1:ℝ)) := by
-         rw [Real.rpow_neg (by norm_num)]; norm_num
+      have h5 : (1:ℝ) / 2 = 2 ^ (-(1:ℝ)) := by norm_num
       rw [h5, neg_mul, ←Real.rpow_add h2p]
       congr
     rw [h3] at h2; clear h3
@@ -99,9 +97,10 @@ problem usa2000_p1 :
   -- for all nonnegative integers n.
   have h2 : ∀ n : ℕ, f (2 ^ (- (n : ℝ))) ≤ (A - 2 * (n:ℝ)) / 2^(n:ℝ) := by
     intro n
-    induction' n with n hpn
-    · aesop
-    · have h6 : (2:ℝ) ^ (n.succ : ℝ) = 2 ^ (n : ℝ) * 2 := by norm_cast
+    induction n with
+    | zero => aesop
+    | succ n hpn =>
+      have h6 : (2:ℝ) ^ (n.succ : ℝ) = 2 ^ (n : ℝ) * 2 := by norm_cast
       replace hpn : f (2 ^ (-(n:ℝ)))/2 ≤ (A - 2 * (n:ℝ)) / 2 ^ (n.succ:ℝ) := by
          rw [h6, div_mul_eq_div_div]; linarith
       have h4 : f (2 ^ (-((Nat.succ n):ℝ)))
@@ -124,9 +123,10 @@ problem usa2000_p1 :
 
   have h3 : ∀ n : ℕ, f (- 2 ^ (- (n : ℝ))) ≤ (B - 2 * (n:ℝ)) / 2^(n:ℝ) := by
     intro n
-    induction' n with n hpn
-    · aesop
-    · have h6 : (2:ℝ) ^ (n.succ : ℝ) = 2 ^ (n : ℝ) * 2 := by norm_cast
+    induction n with
+    | zero => aesop
+    | succ n hpn =>
+      have h6 : (2:ℝ) ^ (n.succ : ℝ) = 2 ^ (n : ℝ) * 2 := by norm_cast
       replace hpn : f (-2 ^ (-(n:ℝ)))/2 ≤ (B - 2 * ↑n) / 2 ^ (n.succ:ℝ) := by
          rw [h6, div_mul_eq_div_div]; linarith
       have h4 : f (-2 ^ (-((Nat.succ n):ℝ)))

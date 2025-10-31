@@ -46,17 +46,17 @@ lemma lemma2 {m y: ℕ} (hy : y < 10^m) : (Nat.digits 10 y).length < m + 1 := by
 
 lemma digits_sum_mul_pow {m x : ℕ} :
     (Nat.digits 10 (x * 10 ^ m)).sum = (Nat.digits 10 x).sum := by
-  cases' x with x
-  · simp
-  rw [mul_comm, Nat.digits_base_pow_mul (by omega) (by omega)]
-  simp
+  cases x with
+  | zero => simp
+  | succ x =>
+    rw [mul_comm, Nat.digits_base_pow_mul (by omega) (by omega)]
+    simp
 
 lemma digits_sum (m x y : ℕ)
     (h1 : y < 10^m) :
     (Nat.digits 10 (x * 10^m + y)).sum =
     (Nat.digits 10 (x * 10^m)).sum + (Nat.digits 10 y).sum := by
-  cases' x with x
-  · simp
+  cases x with | zero => simp | succ x =>
   -- choose k such that (digits 10 y).length + k = m
   have h3 : (Nat.digits 10 y).length ≤ m := by
     have h4 := lemma2 h1
@@ -89,12 +89,7 @@ lemma lemma3 {m : ℕ} (hm : (m % 10) + 1 < 10) :
   · simp [h]
   nth_rw 2 [Nat.digits_eq_cons_digits_div (by norm_num) (by omega)]
   simp only [List.sum_cons]
-  have h3 : (m + 1) % 10 = (m % 10) + 1 := by
-    rw [Nat.add_mod, show 1 % 10 = 1 by rfl]
-    exact Nat.mod_eq_of_lt hm
-  have h4 : (m + 1) / 10 = m / 10 := by omega
-  rw [h3, h4]
-  omega
+  cutsat
 
 theorem lemma6 {b : ℕ} {l1 l2 : List ℕ} (hg : List.Forall₂ (· ≥ ·) l1 l2) :
     Nat.ofDigits b l1 ≥ Nat.ofDigits b l2 := by
@@ -159,7 +154,7 @@ theorem digitsPadded_lt_base {b m n d : ℕ} (hb : 1 < b)
     d < b := by
   unfold digitsPadded padList at hd
   simp only [List.mem_append, List.mem_replicate, ne_eq] at hd
-  cases' hd with hd hd
+  obtain hd | hd := hd
   · exact Nat.digits_lt_base hb hd
   · omega
 
@@ -187,13 +182,15 @@ theorem exists_prefix (L : List ℕ) :
       subst hnil
       simp only [List.nil_append] at hm
       subst hm
-      cases' hd with hd
-      · use []
+      cases hd with
+      | zero =>
+        use []
         constructor
         · simp
         · use m + 1
           rw [List.replicate_succ, List.nil_append]
-      · use [hd + 1]
+      | succ hd =>
+        use [hd + 1]
         constructor
         · simp
         · use m
@@ -365,7 +362,7 @@ problem usa1992_p1 (n : ℕ) :
   have h2 : ∀ m, b m < 10^(∑ i ∈ Finset.range (m + 1), 2^i) := fun m ↦ by
     dsimp [b]
     rw [←Finset.prod_pow_eq_pow_sum]
-    refine Finset.prod_lt_prod_of_nonempty ?_ ?_ Finset.nonempty_range_succ
+    refine Finset.prod_lt_prod_of_nonempty ?_ ?_ Finset.nonempty_range_add_one
     · intro i hi
       exact ha1 i
     · intro i hi

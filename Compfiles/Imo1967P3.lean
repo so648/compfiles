@@ -4,8 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Roozbeh Yousefzadeh
 -/
 
-import Mathlib.Data.Nat.Prime.Factorial
-import Mathlib.Tactic
+import Mathlib
 
 import ProblemExtraction
 
@@ -30,54 +29,25 @@ namespace Imo1967P3
 snip begin
 
 lemma aux_1
-  (c : ℕ → ℕ)
-  (h₁ : ∀ (s : ℕ), c s = s * (s + 1)) :
-  ∀ (a b : ℕ), c a - c b = (a - b) * (a + b + 1) := by
+    (c : ℕ → ℕ)
+    (h₁ : ∀ (s : ℕ), c s = s * (s + 1)) :
+    ∀ (a b : ℕ), c a - c b = (a - b) * (a + b + 1) := by
   intro a b
   rw [h₁, h₁]
-  ring_nf
-  rw [Nat.mul_sub, Nat.mul_sub]
-  ring_nf
-  by_cases ha₀: b ≤ a
-  . have ha₁: b ^ 2 ≤ a * b := by
-      rw [pow_two]
-      exact Nat.mul_le_mul_right b ha₀
-    have ha₂: a * b ≤ a ^ 2 := by
-      rw [pow_two]
-      exact Nat.mul_le_mul_left a ha₀
-    rw [← Nat.add_sub_assoc ha₁, Nat.sub_add_cancel ha₂]
-    omega
-  . push_neg at ha₀
-    have ha₁ : a + a ^ (2 : ℕ) ≤ (b + b ^ (2 : ℕ)) := by
-      refine Nat.add_le_add ?_ ?_
-      . exact Nat.le_of_succ_le ha₀
-      . refine Nat.pow_le_pow_left ?_ (2 : ℕ)
-        exact Nat.le_of_succ_le ha₀
-    have ha₂ : a ^ (2 : ℕ) ≤ a * b := by
-      rw [pow_two]
-      refine Nat.mul_le_mul ?_ ?_
-      . exact Nat.le_refl a
-      . exact Nat.le_of_succ_le ha₀
-    have ha₃ : a * b ≤ b ^ (2 : ℕ) := by
-      rw [pow_two]
-      refine Nat.mul_le_mul ?_ ?_
-      . exact Nat.le_of_succ_le ha₀
-      . exact Nat.le_refl b
-    rw [Nat.sub_eq_zero_of_le ha₁, Nat.sub_eq_zero_of_le ha₂]
-    rw [Nat.sub_eq_zero_of_le (le_of_lt ha₀)]
-    rw [Nat.sub_eq_zero_of_le ha₃]
+  have h_factor : a + a^2 - (b + b^2) = (a - b) * (a + b + 1) := by rw [tsub_mul]; grind
+  grind
 
 lemma aux_2 :
   ∀ (n m : ℕ), 0 < n → n.factorial ∣ ∏ i ∈ Finset.Icc 1 n, (m + i) := by
   intro s t hs₀
   have h₆₀ : ∏ i ∈ Finset.Icc (1 : ℕ) s, (t + i) = (t + s).factorial / t.factorial := by
     refine Nat.eq_div_of_mul_eq_right ?_ ?_
-    . positivity
-    . refine Nat.le_induction ?_ ?_ s hs₀
-      . simp
+    · positivity
+    · refine Nat.le_induction ?_ ?_ s hs₀
+      · simp
         rw [Nat.mul_comm]
         exact rfl
-      . simp only [Nat.succ_eq_add_one, zero_add]
+      · simp only [Nat.succ_eq_add_one, zero_add]
         intro d hd₀ hd₁
         rw [Finset.prod_Icc_succ_top (by omega), ← mul_assoc, hd₁]
         rw [← add_assoc]
@@ -122,44 +92,20 @@ lemma aux_3
     exact h₃ (n + 1) (m + k) hn₀
   refine Nat.Coprime.dvd_of_dvd_mul_left ?_ h₄
   refine Nat.Coprime.symm ?_
-  refine (Nat.coprime_factorial_iff ?_).mpr ?_
-  . exact Nat.Prime.ne_one h₁
-  . rw [Nat.Prime.minFac_eq h₁]
-    exact h₂
+  exact Nat.Prime.coprime_factorial_of_lt h₁ h₂
 
 lemma aux_4
-  (k m n : ℕ)
-  (h₀ : 0 < k ∧ 0 < m ∧ 0 < n)
-  (hk₀ : m < k)
-  (hk₁ : m + n < k)
-  (h₇₀ : n ≤ k - (m + 1)) :
-  ∏ i ∈ Finset.Icc 1 n, (k - (m + i)) = (k - (m + 1)).factorial / (k - (m + 1) - n).factorial := by
-  revert h₇₀
-  refine Nat.le_induction ?_ ?_ n h₀.2.2
-  . simp only [Nat.succ_eq_add_one, zero_add, Finset.Icc_self, Finset.prod_singleton]
-    have hk₂: k - (m + 1) = k - (m + 1) - 1 + 1 := by omega
-    rw [hk₂, Nat.factorial_succ]
-    intro hk₃
-    simp only [add_tsub_cancel_right]
-    rw [←Nat.eq_div_of_mul_eq_left (by positivity) rfl]
-  . intro d hd₀ hd₁ hd₂
-    have hd₃: ∏ i ∈ Finset.Icc 1 d, (k - (m + i)) = (k - (m + 1)).factorial / (k - (m + 1) - d).factorial := by
-      refine hd₁ ?_
-      refine le_trans ?_ hd₂
-      exact Nat.le_add_right d 1
-    rw [Finset.prod_Icc_succ_top (by linarith), hd₃]
-    have hd₄: k - (m + 1) - d = k - (m + 1) - (d + 1) + 1 := by
-      rw [Nat.sub_add_eq _ d 1, Nat.sub_add_cancel ?_]
-      omega
-    have hd₅: (k - (m + 1) - d).factorial ∣ (k - (m + 1)).factorial :=
-      Nat.factorial_dvd_factorial (Nat.sub_le _ _)
-    rw [Nat.div_mul_right_comm hd₅]
-    rw [hd₄, Nat.factorial_succ, ← hd₄]
-    rw [← Nat.sub_add_eq, add_assoc m 1 d, Nat.add_comm 1 d]
-    rw [mul_comm _ (k - (m + (d + 1)))]
-    refine Nat.mul_div_mul_left _ _ ?_
-    omega
-
+    (k m n : ℕ)
+    (h₇₀ : n ≤ k - (m + 1)) :
+    ∏ i ∈ Finset.Icc 1 n, (k - (m + i)) = (k - (m + 1)).factorial / (k - (m + 1) - n).factorial := by
+  have h_prod : ∏ i ∈ Finset.Icc 1 n, (k - (m + i)) = Nat.descFactorial (k - (m + 1)) n := by
+    rw [Nat.descFactorial_eq_prod_range, ←Finset.Ico_succ_right_eq_Icc,
+        Finset.prod_Ico_eq_prod_range]
+    simp [add_comm, add_left_comm, tsub_tsub]
+  rw [h_prod, Nat.descFactorial_eq_factorial_mul_choose]
+  refine (Nat.div_eq_of_eq_mul_left (Nat.factorial_pos _) ?_).symm
+  have := Nat.choose_mul_factorial_mul_factorial h₇₀
+  grind
 
 snip end
 
@@ -180,8 +126,8 @@ problem imo1967_p3
       simpa using h₁
     simp_rw [h₄₀]
     refine Nat.le_induction ?_ ?_ n h₀.2.2
-    . simp
-    . simp only [Nat.succ_eq_add_one, zero_add]
+    · simp
+    · simp only [Nat.succ_eq_add_one, zero_add]
       intro d hd₀ hd₁
       rw [Finset.prod_Icc_succ_top (by omega), hd₁]
       rw [Nat.factorial_succ (d + (1 : ℕ))]
@@ -190,7 +136,7 @@ problem imo1967_p3
       ring_nf
   rw [h₄]
   by_cases hk₀: k ≤ m
-  . have h₅: (∏ i ∈ Finset.Icc 1 n, (((c (m + i)):ℤ) - ((c k):ℤ))) = (∏ i ∈ Finset.Icc 1 n, (m + i + k + 1)) * (∏ i ∈ Finset.Icc 1 n, (m + i - k)) := by
+  · have h₅: (∏ i ∈ Finset.Icc 1 n, (((c (m + i)):ℤ) - ((c k):ℤ))) = (∏ i ∈ Finset.Icc 1 n, (m + i + k + 1)) * (∏ i ∈ Finset.Icc 1 n, (m + i - k)) := by
       have h₅₀: ∀ a b, c a - c b = (a - b) * (a + b + 1) := by
         exact fun a b ↦ aux_1 c h₁ a b
       have h₅₁: ∏ i ∈ Finset.Icc 1 n, (((c (m + i)):ℤ) - ((c k):ℤ)) = (↑(∏ i ∈ Finset.Icc 1 n, ((c (m + i)) - (c k))):ℤ) := by
@@ -226,18 +172,18 @@ problem imo1967_p3
     rw [h₅, mul_comm]
     refine Nat.cast_dvd_cast ?_
     exact Nat.mul_dvd_mul h₈ h₇
-  . push_neg at hk₀
+  · push_neg at hk₀
     by_cases hk₁: k ≤ m + n
-    . have h₆ : ∏ i ∈ Finset.Icc (1 : ℕ) n, ((↑(c (m + i)) : ℤ) - (↑(c k) : ℤ)) = 0 := by
+    · have h₆ : ∏ i ∈ Finset.Icc (1 : ℕ) n, ((↑(c (m + i)) : ℤ) - (↑(c k) : ℤ)) = 0 := by
         refine Finset.prod_eq_zero_iff.mpr ?_
         use (k - m)
         constructor
-        . refine Finset.mem_Icc.mpr ?_
+        · refine Finset.mem_Icc.mpr ?_
           omega
-        . grind
+        · grind
       rw [h₆]
       exact Int.dvd_zero ((↑n.factorial : ℤ) * (↑(n + (1 : ℕ)).factorial : ℤ))
-    . push_neg at hk₁
+    · push_neg at hk₁
       have h₅: ∏ i ∈ Finset.Icc (1 : ℕ) n, ((↑(c (m + i)) : ℤ) - (↑(c k) : ℤ)) =
         ∏ i ∈ Finset.Icc (1 : ℕ) n, (((↑(c k) : ℤ) - (↑(c (m + i)) : ℤ)) * (-1:ℤ)) := by
         group
@@ -276,8 +222,8 @@ problem imo1967_p3
         rw [← Nat.cast_mul, ← Nat.cast_mul]
         refine Nat.cast_dvd_cast ?_
         refine Nat.mul_dvd_mul ?_ ?_
-        . have h₇₀: n ≤ k - (m + 1) := by omega
-          have h₇₁: ∏ i ∈ Finset.Icc 1 n, (k - (m + i)) = (k - (m + 1)).factorial / (k - (m + 1) - n).factorial := aux_4 k m n h₀ hk₀ hk₁ h₇₀
+        · have h₇₀: n ≤ k - (m + 1) := by omega
+          have h₇₁: ∏ i ∈ Finset.Icc 1 n, (k - (m + i)) = (k - (m + 1)).factorial / (k - (m + 1) - n).factorial := aux_4 k m n h₇₀
           have h₇₂: n.factorial * (k - (m + 1) - n).factorial ∣ (k - (m + 1)).factorial := by exact Nat.factorial_mul_factorial_dvd_factorial h₇₀
           have h₇₃: ∏ i ∈ Finset.Icc 1 n, (k - (m + i)) = n.factorial * Nat.choose (k - (m + 1)) n := by
             rw [Nat.choose_eq_factorial_div_factorial h₇₀, h₇₁]
@@ -286,7 +232,7 @@ problem imo1967_p3
             refine Nat.mul_div_mul_left _ _ ?_
             exact Nat.factorial_pos n
           exact Dvd.intro _ h₇₃.symm
-        . have h₇₀: ∏ i ∈ Finset.Icc 1 n, (k + (m + i) + 1) = ∏ i ∈ Finset.Icc 1 n, (m + i + k + 1) := by group
+        · have h₇₀: ∏ i ∈ Finset.Icc 1 n, (k + (m + i) + 1) = ∏ i ∈ Finset.Icc 1 n, (m + i + k + 1) := by group
           rw [h₇₀]
           exact aux_3 k m n h₀ h₂ h₃
       exact Dvd.dvd.mul_right h₇ (∏ x ∈ Finset.Icc 1 n, -1)

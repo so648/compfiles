@@ -127,9 +127,10 @@ problem imo1970_p3 :
       exact div_nonneg (sub_nonneg.mpr h3) (Real.sqrt_nonneg _)
 
     · -- b_n < 2
-      cases' n with n
-      · simp only [b_seq, Finset.range_zero, Finset.sum_empty, zero_lt_two]
-      · -- Use telescoping sum
+      cases n with
+      | zero => simp only [b_seq, Finset.range_zero, Finset.sum_empty, zero_lt_two]
+      | succ n =>
+        -- Use telescoping sum
         -- Change of index: the k-th term for k ≥ 1 is bounded by 2(1/√a_{k-1} - 1/√a_k)
         have bound : b_seq seq (n + 1) ≤ 2 * (1 - 1 / c_seq seq (n + 1)) := by
           -- Split the sum to handle k = 0 separately
@@ -186,7 +187,7 @@ problem imo1970_p3 :
     obtain ⟨hc_nonneg, hc_lt_two⟩ := hc
 
     have existsD : ∃ d : ℝ, 0 < d ∧ d < 1 ∧ d*(1 + d) > c := by
-      obtain h | h := Classical.em (c = 0)
+      by_cases h : c = 0
       · use 1 / 2
         constructor
         · exact one_half_pos

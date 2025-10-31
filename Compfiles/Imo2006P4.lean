@@ -171,11 +171,11 @@ problem imo2006_p4 :
           by_cases h₁ : n₁ > 1
           · have : y + 1 = 2 * (2 ^ (n₁ - 1) * t + 1) := by
               apply Nat.eq_add_of_sub_eq at ht
-              rw [ht, mul_add]
-              simp [←Nat.mul_assoc]
-              left
-              rw [←Nat.pow_add_one', Nat.sub_add_cancel]
-              exact Nat.one_le_of_lt h₁
+              · rw [ht, mul_add]
+                simp [←Nat.mul_assoc]
+                left
+                rw [←Nat.pow_add_one', Nat.sub_add_cancel]
+                exact Nat.one_le_of_lt h₁
               exact hypos
             have h' : 2 ^ x * (2 ^ (x + 1) + 1) = 2 ^ (n₁ + 1) * (t * (2 ^ (n₁ - 1) * t + 1)) := by
               rw [h, this, ht]
@@ -241,8 +241,7 @@ problem imo2006_p4 :
                 apply Nat.eq_add_of_sub_eq at ht
                 · use s, hs', -1
                   simp [ht, h', pow_add]
-                  rw [mul_comm _ 2, mul_assoc, show 2 ^ n₂ * (s : ℤ) = t + 1 by norm_cast; simp [hs]]
-                  · ring
+                  cutsat
                 · exact hypos
               · intro h'
                 simp [ht''] at h'
@@ -255,19 +254,19 @@ problem imo2006_p4 :
           · rw [←h]
             simp [add_comm]
           · rw [Nat.cast_mul, Nat.cast_sub]
-            simp [hy]
-            · trans (2 ^ (x - 1) * ↑m + ε) ^ 2 - 1
-              · ring
-              · ring_nf
-                have : ε ^ 2 = 1 := sq_eq_one_iff.mpr hε
-                simp [this]
-                ring_nf
-                congr 1
-                · nth_rw 2 [show x = x - 1 + 1 by rw [Nat.sub_add_cancel]; exact hxpos]
-                  rw [pow_add]
-                  ring
-                · congr
-                  exact Nat.sub_one_mul _ _
+            · simp [hy]
+              · trans (2 ^ (x - 1) * ↑m + ε) ^ 2 - 1
+                · ring
+                · ring_nf
+                  have : ε ^ 2 = 1 := sq_eq_one_iff.mpr hε
+                  simp [this]
+                  ring_nf
+                  congr 1
+                  · nth_rw 2 [show x = x - 1 + 1 by rw [Nat.sub_add_cancel]; exact hxpos]
+                    rw [pow_add]
+                    ring
+                  · congr
+                    exact Nat.sub_one_mul _ _
             · exact hypos
         -- or, equivalently $$ 1+2^{x+1}=2^{x-2} m^{2}+m \epsilon.
         have h : 1 + 2 ^ (x + 1) = 2 ^ (x - 2) * m ^ 2 + m * ε := by
@@ -275,7 +274,12 @@ problem imo2006_p4 :
             _ = (2 : ℤ) ^ x * (1 + 2 ^ (x + 1)) / 2 ^ x := by
               rw [mul_div_cancel_left₀]
               positivity
-            _ = (2 ^ x * 2 ^ (x - 2) * m ^ 2 + 2 ^ x * m * ε) / 2 ^ x := by rw [h]; congr; rw [←pow_add]; rw [←Nat.add_sub_assoc]; simp; ring_nf; exact Nat.le_of_succ_le hxge3
+            _ = (2 ^ x * 2 ^ (x - 2) * m ^ 2 + 2 ^ x * m * ε) / 2 ^ x := by
+                rw [h]
+                congr
+                rw [←pow_add, ←Nat.add_sub_assoc]
+                · simp; ring_nf
+                exact Nat.le_of_succ_le hxge3
             _ = 2 ^ x * (2 ^ (x - 2) * m ^ 2 + m * ε) / 2 ^ x := by rw [mul_add, ←mul_assoc, ←mul_assoc]
             _ = _ := by simp
         -- $$ Therefore $$ 1-\epsilon m=2^{x-2}\left(m^{2}-8\right).
@@ -312,13 +316,7 @@ problem imo2006_p4 :
             have : m ^ 2 < 3 ^ 2 := by apply lt_of_le_of_lt hm'; simp
             apply Nat.pow_lt_pow_iff_left ?_ |>.mp this
             simp
-          have : m = 1 := by
-            interval_cases m
-            · simp at hm
-            · simp
-            · have : ¬ Odd 2 := by exact Nat.not_odd_iff.mpr rfl
-              exact this.elim hm
-          exact hmne1.elim this
+          cutsat
         · -- For $\epsilon=-1$ equation (2) gives us $$ 1+m=2^{x-2}\left(m^{2}-8\right) \geq 2\left(m^{2}-8\right),
           simp [hε] at this
           have hle : 1 + (m : ℤ) ≥ 2 * (m ^ 2 - 8) := by

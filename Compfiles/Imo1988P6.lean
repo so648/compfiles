@@ -168,7 +168,7 @@ theorem constant_descent_vieta_jumping (x y : ℕ) {claim : Prop} {H : ℕ → �
   rw [mul_comm] at hV₂
   have Hc := H_desc hmx mx_lt_my h_base hHm c h_root hV₁ hV₂
   -- This means that we may assume that c ≥ 0 and c ≤ m_x.
-  cases' Hc with c_nonneg c_lt
+  obtain ⟨c_nonneg, c_lt⟩ := Hc
   -- In other words, c is a natural number.
   lift c to ℕ using c_nonneg
   -- Recall that we are trying find a point (a,b) such that b ∈ S and b < m.
@@ -190,13 +190,7 @@ theorem constant_descent_vieta_jumping (x y : ℕ) {claim : Prop} {H : ℕ → �
     rw [H_symm, H_quad]
     simpa using h_root
   · -- For the second condition, we note that it suffices to check that c ≠ m_x.
-    suffices hc : c ≠ mx from lt_of_le_of_ne (mod_cast c_lt) hc
-    -- However, recall that B(m_x) ≠ m_x + m_y.
-    -- If c = m_x, we can prove B(m_x) = m_x + m_y.
-    contrapose! hm_B₂
-    subst c
-    simp [hV₁]
-    -- Hence p' = (c, m_x) lies on the upper branch, and we are done.
+    cutsat
 
 snip end
 
@@ -209,10 +203,7 @@ problem imo1988_p6 {a b : ℕ} (h : a * b + 1 ∣ a ^ 2 + b ^ 2) :
       hk (fun x => k * x) (fun x => x * x - k) fun _ _ => False <;>
     clear hk a b
   · -- We will now show that the fibers of the solution set are described by a quadratic equation.
-    intro x y
-    rw [← Int.natCast_inj, ← sub_eq_zero]
-    apply eq_iff_eq_cancel_right.2
-    simp; ring
+    cutsat
   · -- Show that the solution set is symmetric in a and b.
     intro x y
     simp [add_comm (x * x), mul_comm x]
@@ -268,11 +259,7 @@ example {a b : ℕ} (h : a * b ∣ a ^ 2 + b ^ 2 + 1) : 3 * a * b = a ^ 2 + b ^ 
   apply constant_descent_vieta_jumping a b (H := fun a b => a * a + b * b + 1 = a * b * k)
       hk (fun x => k * x) (fun x => x * x + 1) fun x _ => x ≤ 1 <;>
     clear hk a b
-  · -- We will now show that the fibers of the solution set are described by a quadratic equation.
-    intro x y
-    rw [← Int.natCast_inj, ← sub_eq_zero]
-    apply eq_iff_eq_cancel_right.2
-    simp; ring
+  · cutsat
   · -- Show that the solution set is symmetric in a and b.
     intro x y; ring_nf -- Porting note: Originally, `cc` solved the entire goal
   · -- Show that the claim is true if b = 0.

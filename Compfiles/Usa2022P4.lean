@@ -50,7 +50,7 @@ problem usa2022_p4 (p q : ℕ) :
            _ < p^2 + q := Nat.lt_add_of_pos_right hq_pos
            _ ≤ _ := Nat.add_le_add_right h2 q
            _ = p * q := hb
-    have h7 : p < q := (mul_lt_mul_left hp_pos).mp h6
+    have h7 : p < q := (Nat.mul_lt_mul_left hp_pos).mp h6
     exact Nat.le_lt_asymm hqlep h7
 
   -- Subtracting our equations gives (b - a)(b + a) = b² - a² = p(q - 1),
@@ -84,7 +84,7 @@ problem usa2022_p4 (p q : ℕ) :
   have h7 : b + a = p := by
     obtain ⟨k, hk⟩ := h5
     rw [mul_comm, hk] at h6
-    have : k < 2 := (mul_lt_mul_left hp_pos).mp h6
+    have : k < 2 := (Nat.mul_lt_mul_left hp_pos).mp h6
     interval_cases k <;> omega
 
   -- Hence q - 1 = b - a.
@@ -104,24 +104,27 @@ problem usa2022_p4 (p q : ℕ) :
       rw [h11, Nat.add_mod]
       simp only [Nat.mul_mod_right, add_zero, Nat.mod_mod]
     rw [h7, ←h8] at h10
-    cases' h : p % 2 with p'
-    · have h14 : p = 2 := by
+    cases h : p % 2 with
+    | zero =>
+      have h14 : p = 2 := by
         have h15 : 2 ∣ p := Nat.modEq_zero_iff_dvd.mp h
-        cases' Nat.Prime.eq_one_or_self_of_dvd hpp _ h15 with h16 h16
+        obtain h16 | h16 := Nat.Prime.eq_one_or_self_of_dvd hpp _ h15
         · norm_num at h16
         · exact h16.symm
       omega
-    · cases' p' with p''
-      · norm_num at h
+    | succ p' =>
+      cases p' with
+      | zero =>
+        norm_num at h
         rw [h] at h10
         apply_fun (fun x ↦ (x + (1%2))%2) at h10
         rw [←Nat.add_mod, Nat.sub_add_cancel hq_pos] at h10
         norm_num at h10
         have h15 : 2 ∣ q := Nat.modEq_zero_iff_dvd.mp h10.symm
-        cases' Nat.Prime.eq_one_or_self_of_dvd hpq _ h15 with h16 h16
+        obtain h16 | h16 := Nat.Prime.eq_one_or_self_of_dvd hpq _ h15
         · norm_num at h16
         · exact h16.symm
-      · omega
+      | succ _ => omega
   have h11 : p = 3 := by
     have h20 : b - a = 1 := by rw [h9] at h8; exact h8.symm
     have h22 : a ≤ b := Nat.le_of_lt hba
@@ -133,7 +136,7 @@ problem usa2022_p4 (p q : ℕ) :
     have h30 : a = 1 := by
       zify at ha
       have h26 : ((a:ℤ) - 1)^2 = 0 := by linear_combination ha
-      have h27 : (a:ℤ) - 1 = 0 := pow_eq_zero h26
+      have h27 : (a:ℤ) - 1 = 0 := eq_zero_of_pow_eq_zero h26
       have h28 : (a:ℤ) = 1 := Int.sub_eq_zero.mp h27
       exact Int.ofNat_inj.mp h28
     rw [h30] at h23

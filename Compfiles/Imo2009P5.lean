@@ -34,12 +34,9 @@ snip begin
 section extra_lemmas
 
 lemma exists_sup_fn_fin (f : ℕ → ℕ) (c : ℕ) : ∃ K : ℕ, ∀ n : ℕ, n < c → f n ≤ K := by
-  induction' c with c ih
-  · simp
-  · obtain ⟨k, hk⟩ := ih
-    use max k (f c)
-    intro n hn
-    obtain hlt | rfl := Nat.lt_succ_iff_lt_or_eq.mp hn <;> aesop
+  use Finset.sup (Finset.range c) f
+  intro n hn
+  exact Finset.le_sup (Finset.mem_range.mpr hn)
 
 private lemma pnat_to_nat_prop {P : ℕ+ → Prop} :
   (∀ n : ℕ+, P n) ↔ (∀ n : ℕ, P n.succPNat) :=
@@ -63,12 +60,7 @@ theorem final_solution_nat (f : ℕ → ℕ) :
     ∧ (∀ x y : ℕ, x ≤ f y + f (y + f x))
     ∧ (∀ x y : ℕ, f y ≤ f (y + f x) + x))
       ↔ f = λ x ↦ x := by
-  ---- First, the easier direction: `←`
-  symm; constructor
-  · rintro rfl
-    refine ⟨λ x y ↦ le_refl (y + x), λ x y ↦ ?_, λ x y ↦ ?_⟩
-    · rw [← add_assoc]; exact le_add_self
-    rw [add_assoc]; exact le_self_add
+  refine ⟨?_, by cutsat⟩
 
   ---- For the harder case, first prove that `f(0) = 0`
   rintro ⟨h, h0, h1⟩
@@ -81,9 +73,10 @@ theorem final_solution_nat (f : ℕ → ℕ) :
 
   ---- Now get `f(f(x)) = x` for all `x`
   replace h0 : ∀ x : ℕ, f (f x) = x := by
-    intro x; apply le_antisymm
-    replace h := h x 0
-    rwa [h1, zero_add, zero_add] at h
+    intro x
+    apply le_antisymm
+    · replace h := h x 0
+      rwa [h1, zero_add, zero_add] at h
     replace h0 := h0 x 0
     rwa [h1, zero_add, zero_add] at h0
 
@@ -97,9 +90,10 @@ theorem final_solution_nat (f : ℕ → ℕ) :
 
     intro n
     induction' n using Nat.strong_induction_on with n n_ih
-    cases' n with n
-    · simp[h1]
-    · replace h := h (n * f 1)
+    cases n with
+    | zero => simp[h1]
+    | succ n =>
+      replace h := h (n * f 1)
       rw [n_ih n n.lt_succ_self, ← add_one_mul, le_iff_eq_or_lt, Nat.lt_succ_iff] at h
       revert h; refine (or_iff_left_of_imp (λ h ↦ ?_)).mp
       replace n_ih := congr_arg f (n_ih _ (lt_of_le_of_lt h n.lt_succ_self))
@@ -111,8 +105,9 @@ theorem final_solution_nat (f : ℕ → ℕ) :
   ---- Finish
   funext x
   induction' x using Nat.strong_induction_on with x x_ih
-  cases' x with x
-  · exact h1
+  cases x with
+  | zero => exact h1
+  | succ x =>
   replace h := h x
   rw [h2, x_ih x x.lt_succ_self, le_iff_eq_or_lt, Nat.lt_succ_iff] at h
   revert h; refine (or_iff_left_of_imp (λ h ↦ ?_)).mp

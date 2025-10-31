@@ -120,20 +120,14 @@ problem imo2012_p4 (f : ℤ → ℤ) :
       ring_nf
 
     have ext_eq_zero {{a : ℤ}} (h : f a = 0) : ∀ x, f (a * x) = 0 := by
-      rintro (x | x)
-      rotate_left; rw [← even, Int.neg_mul_eq_mul_neg, Int.neg_negSucc]
-      all_goals
-        induction' x with x ih
-        · simpa
-
-      have := P a (a * (Nat.succ x))
-      rotate_left; have := P a (a * x)
-
-      all_goals
-        simp at ih; simp [ih, h] at this
-        rw [← this]
-        congr 1
-        simp; ring
+      intro x
+      induction' x using Int.induction_on with x ih i
+      · simp [«f0=0»]
+      · specialize P (a * x) a; simp_all
+        simpa only [mul_add, mul_one] using P
+      · have := P (a * ( -↑i - 1 )) a
+        ring_nf at *
+        aesop
 
     cases «P(a,a)» 1
 
@@ -251,9 +245,13 @@ problem imo2012_p4 (f : ℤ → ℤ) :
               have := P (x + 1) (-2)
               rw [show (x : ℤ) + 1 + (-2) = x - 1 by omega, even] at this
               have «f(x-1)=(x-1)²*f1» : f ((x : ℤ) - 1) = ((x : ℤ) - 1) ^ 2 * f 1 := by
-                rcases Decidable.em ((x : ℤ) - 1 ≥ 0) with h | h
-                rcases x with _ | x; case zero => simp [even]
-                simp; apply ih; omega; simp
+                by_cases h : (x : ℤ) - 1 ≥ 0
+                · rcases x with _ | x
+                  case pos.zero => simp [even]
+                  simp only [Nat.cast_add, Nat.cast_one, add_sub_cancel_right]
+                  apply ih
+                  · cutsat
+                  · simp
 
                 simp at h; simp [h, even]
 
@@ -266,13 +264,7 @@ problem imo2012_p4 (f : ℤ → ℤ) :
               rcases this with goal | «f(x+1)=(x-3)²*f1»; case inl => exact goal
               have := «f(x+1)=(x-3)²*f1»
               rw [«f(x+1)=(x-1)²*f1», mul_eq_mul_right_iff, pow_eq_pow_iff_cases] at this
-              cases this
-              case inr «f1=0» =>
-                rw [← one_mul (Int.ofNat x.succ), ext_eq_zero «f1=0», «f1=0»]; simp
-              case inl this =>
-                simp at this
-                have : x = 2 := by omega
-                simpa [this]
+              cutsat
 
           right
           use f 1

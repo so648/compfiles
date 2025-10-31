@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2024 The Compfiles Contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: InternLM-MATH LEAN Formalizer v0.1
+Authors: InternLM-MATH LEAN Formalizer v0.1, Goedel-Prover-V2
 -/
 
 import Mathlib.Tactic
@@ -27,14 +27,13 @@ namespace Imo1988P3
 
 determine solution : ℕ := 92
 
-problem imo1988_p3 (f : ℕ → ℕ)
-  (h₀ : f 1 = 1)
-  (h₁ : f 3 = 3)
-  (h₂ : ∀ n, f (2 * n) = f n)
-  (h₃ : ∀ n, f (4 * n + 1) + f n = 2 * f (2 * n + 1))
-  (h₄ : ∀ n, f (4 * n + 3) + 2 * f n = 3 * f (2 * n + 1))
-  (A: Finset {n | 0 < n ∧ n ≤ 1988 ∧ f n = n}) :
-    A.card = solution := by sorry
-
+problem imo1988_p3 (f : ℕ+ → ℕ+)
+    (h₀ : f 1 = 1)
+    (h₁ : f 3 = 3)
+    (h₂ : ∀ n, f (2 * n) = f n)
+    (h₃ : ∀ n, f (4 * n + 1) + f n = 2 * f (2 * n + 1))
+    (h₄ : ∀ n, f (4 * n + 3) + 2 * f n = 3 * f (2 * n + 1)) :
+    Set.ncard {n | n ≤ 1988 ∧ f n = n} = solution := by
+  sorry
 
 end Imo1988P3

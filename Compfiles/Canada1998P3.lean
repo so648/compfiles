@@ -26,8 +26,8 @@ problem canada1998_p3 (n : ℕ) (hn : 2 ≤ n) :
   -- Follows the proof in _Mathematical Olympiads 1998-1999_
   -- by Titu Andreescu and Zuming Feng
 
-  cases' n with n; · norm_num at hn
-  cases' n with n; · norm_num at hn
+  cases n with | zero => norm_num at hn | succ n =>
+  cases n with | zero => norm_num at hn | succ n =>
 
   revert hn
   intro h2; clear h2
@@ -73,8 +73,7 @@ problem canada1998_p3 (n : ℕ) (hn : 2 ≤ n) :
     nth_rewrite 1 [Finset.sum_range_succ'] at h3
     rw [h1, add_assoc] at h3
 
-    have h4 : Finset.Nonempty (Finset.range (m + 1)) :=
-      Finset.nonempty_range_succ
+    have h4 : Finset.Nonempty (Finset.range (m + 1)) := Finset.nonempty_range_add_one
     have h5 := Finset.sum_lt_sum_of_nonempty h4 h2
     norm_cast at h5
 

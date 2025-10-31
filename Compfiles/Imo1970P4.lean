@@ -22,34 +22,20 @@ namespace Imo1970P4
 
 snip begin
 
-lemma card_opposite (s s' s'' : Finset ℕ) (predicate: ℕ → Prop) [DecidablePred predicate] (filter : s' = (s.filter (λ x => predicate x)))
-                    (opposite_filter: s'' = (s.filter (λ x => ¬ predicate x))) : s'.card + s''.card = s.card := by
-  rw[filter]
-  rw[opposite_filter]
-  have := @Finset.filter_card_add_filter_neg_card_eq_card ℕ s predicate
-  apply this
+lemma card_opposite (s s' s'' : Finset ℕ) (predicate: ℕ → Prop)
+    [DecidablePred predicate] (filter : s' = (s.filter (λ x => predicate x)))
+    (opposite_filter: s'' = (s.filter (λ x => ¬ predicate x))) :
+    s'.card + s''.card = s.card := by
+  rw [filter]
+  rw [opposite_filter]
+  exact Finset.filter_card_add_filter_neg_card_eq_card predicate
 
-lemma no_other_p_divisors_nearby (x : ℕ) (y : ℕ) (p : ℕ) (p_gt_5 : p > 5) (x_lt_y : x < y) (close_by: ∃ k, k ≤ 5 ∧ x + k = y) (x_div_p : p ∣ x) : ¬ (p ∣ y) := by
-  obtain ⟨k, ⟨bound, sum⟩⟩ := close_by
-  intro H
-  obtain ⟨a, Ha⟩ := x_div_p
-  obtain ⟨b, Hb⟩ := H
-  rw[Ha] at sum
-  rw[Hb] at sum
-  rw[Ha] at x_lt_y
-  rw[Hb] at x_lt_y
-  have a_lt_b : a < b := by
-    exact (mul_lt_mul_left (show 0 < p by omega)).mp x_lt_y
-  have a_lt_b_2 : 1 ≤ (b - a) := by
-    omega
-  have k_eq : p * (b - a) = k := by
-    calc p * (b - a) = p * b - p * a := mul_tsub p b a
-    _ = p * a + k - p * a := by rw[sum]
-    _ = k := by omega
-  have : p * (b - a) > 5 := by
-    calc p * (b - a) > 5 * (b - a) := by rel[p_gt_5]
-         _ ≥ 5 * 1 := by rel[a_lt_b_2]
-  omega
+lemma no_other_p_divisors_nearby (x : ℕ) (y : ℕ) (p : ℕ) (p_gt_5 : p > 5) (x_lt_y : x < y)
+    (close_by: ∃ k, k ≤ 5 ∧ x + k = y) (x_div_p : p ∣ x) : ¬ p ∣ y := by
+  obtain ⟨k, hk_le, rfl⟩ := close_by
+  have h_not_div_k : ¬ p ∣ k :=
+    Nat.not_dvd_of_pos_of_lt (Nat.lt_add_right_iff_pos.mp x_lt_y) (Nat.lt_of_le_of_lt hk_le p_gt_5)
+  simp_all [Nat.dvd_add_right]
 
 lemma no_other_5_divisors_nearby (x : ℕ) (y : ℕ) (x_lt_y : x < y) (close_by: ∃ k, k ≤ 4 ∧ x + k = y) (x_div_p : 5 ∣ x) : ¬ (5 ∣ y) := by
   omega
@@ -161,41 +147,17 @@ lemma p_gt_five_not_divides (n : ℕ) (s1 s2 : Finset ℕ) (partition : s1 ∪ s
     apply p_not_dvd_prod_y
     exact p_dvd_prod_y
 
-lemma odd_props (n : ℕ) (odd_s : Finset ℕ) (s_odd_eq : odd_s = (Finset.Icc n (n + 5)).filter (λ x => Odd x)) :
-  ∃ (a b c : ℕ), {a, b, c} = odd_s ∧ b = a + 2 ∧ c = b + 2 := by
-  cases Decidable.em (Odd n)
-  case inl h =>
-    have h2 := Odd.not_two_dvd_nat h
+lemma odd_props (n : ℕ) (odd_s : Finset ℕ)
+    (s_odd_eq : odd_s = (Finset.Icc n (n + 5)).filter (λ x => Odd x)) :
+    ∃ (a b c : ℕ), {a, b, c} = odd_s ∧ b = a + 2 ∧ c = b + 2 := by
+  by_cases h : Odd n
+  · have h2 := Odd.not_two_dvd_nat h
     use n, n + 2, n + 4
     simp_all only [Nat.two_dvd_ne_zero, and_self, and_true]
     ext x
     simp_all only [Finset.mem_insert, Finset.mem_singleton, Finset.mem_filter, Finset.mem_Icc]
-    apply Iff.intro
-    · intro H
-      constructor
-      · omega
-      · obtain h3 | h5 | h6 := H
-        · simp_all only
-        · simp_all only
-          dsimp[Odd] at h ⊢
-          obtain ⟨k, h6⟩ := h
-          use k + 1
-          rw [h6]
-          ring_nf
-        · simp_all only
-          dsimp [Odd] at h ⊢
-          obtain ⟨k, h6⟩ := h
-          use k + 2
-          rw [h6]
-          ring_nf
-    intro H
-    obtain ⟨a, Hh⟩ := H
-    have h3 := Odd.not_two_dvd_nat Hh
-    by_contra Hhh
-    simp_all only [Nat.two_dvd_ne_zero, not_or]
-    omega
-  case inr h =>
-    use n + 1, n + 3, n + 5
+    apply Iff.intro <;> grind
+  · use n + 1, n + 3, n + 5
     simp_all only [Nat.not_odd_iff_even, and_self, and_true]
     have := Even.two_dvd h
     ext x
@@ -206,16 +168,7 @@ lemma exactly_three_odd_numbers (n : ℕ) (odd_s : Finset ℕ)
                                 (odd_s_eq: odd_s = (Finset.Icc n (n + 5)).filter (λ x => Odd x)): (odd_s).card = 3 := by
   -- ∃ (a b c : ℕ), {a, b, c} = odd_s ∧ odd_s.card = 3
   obtain ⟨x, y, z, ⟨left, ⟨y_eq, z_eq⟩⟩⟩ := odd_props n odd_s odd_s_eq
-  have := (@Finset.card_eq_three ℕ odd_s).mpr
-  apply this
-  use x, x + 2, x + 2 + 2
-  constructor
-  · omega
-  · constructor
-    · omega
-    · constructor
-      · omega
-      · simp_all only
+  grind
 
 lemma at_most_one (n : ℕ) (x y : ℕ)
   (x_in_interval : x ∈ Finset.Icc n (n + 5)) (y_in_interval : y ∈ Finset.Icc n (n + 5))
@@ -263,15 +216,7 @@ lemma unique_divisor (n : ZMod 3) (a b c : ℕ) (n_eq_a : n = a) (s : Finset ℕ
     have three_div_a : 3 ∣ a := by
       apply (ZMod.natCast_eq_zero_iff a 3).mp
       simp_all only [Fin.zero_eta]
-    constructor
-    · simp only
-      constructor
-      · aesop
-      · simp_all only [Fin.zero_eta]
-    · rintro o ⟨o_in_s, three_div_o⟩
-      rw[s_eq] at o_in_s
-      simp_all only [Fin.zero_eta, Finset.mem_insert, Finset.mem_singleton]
-      omega
+    grind
   · use b
     have three_div_b : 3 ∣ b := by
       simp_all only [Fin.mk_one]
@@ -309,17 +254,7 @@ lemma card_1_of_exists_unique (s : Finset ℕ)
   apply this
   obtain ⟨a', H⟩ := exists_unique
   use a'
-  simp_all only [forall_exists_index, Finset.card_singleton, implies_true, and_imp]
-  obtain ⟨left, right⟩ := H
-  obtain ⟨left, right_1⟩ := left
-  ext a : 1
-  simp_all only [Finset.mem_filter, Finset.mem_singleton]
-  apply Iff.intro
-  · intro a_1
-    simp_all only
-  · intro a_1
-    subst a_1
-    simp_all only [and_self]
+  grind
 
 lemma three_divides_odd_exactly_once (n : ℕ) (s odd_s : Finset ℕ) (partition : s = Finset.Icc n (n + 5))
                                      (odd_s_eq: odd_s = s.filter (λ x => Odd x)) : (odd_s.filter (λ x => 3 ∣ x)).card = 1 := by
@@ -356,10 +291,7 @@ lemma two_three_five_and_more_is_enough (x : ℕ) (two_does_not_divide : ¬ 2 �
       simp_all only [Nat.two_dvd_ne_zero, gt_iff_lt, Finset.mem_insert, Finset.mem_singleton, true_or]
       omega
     case inr h => grind
-  rintro ⟨p, ⟨pp, div⟩⟩
-  have p_gt_5_implies := p_gt_5_not_dvd p pp
-  have p_le_5_implies := p_le_5_not_dvd p pp
-  omega
+  grind
 
 lemma subsets_must_overlap_pigeonhole (s s1 s2 : Finset ℕ) (predicate_s1: ℕ → Prop) (predicate_s2 : ℕ → Prop)
                                       [DecidablePred predicate_s1] [DecidablePred predicate_s2]
@@ -474,15 +406,7 @@ lemma contains_one_or_zero (n : ℕ) (s1 s2 : Finset ℕ) (partition : s1 ∪ s2
     · simp_all only [Finset.mem_filter, odd_s]
     · constructor
       · exact non_div_3
-      constructor
-      · exact non_div_5
-      · dsimp[odd_s] at x_in_odd_s
-        intro two_div_x
-        have : ¬ Odd x := by
-          intro odd_x
-          dsimp[Odd] at odd_x
-          omega
-        simp_all only [gt_iff_lt, Finset.mem_filter]
+      grind
 
   have exists_x_no_prime_divisors : ∃ x ∈ (s1 ∪ s2), ¬ ∃ (p : ℕ), Nat.Prime p ∧ p ∣ x := by
     obtain ⟨x, x_in_s1_s2, non_div_3, non_div_5, non_div_2⟩ := exists_odd_x_non_div_by_3_5

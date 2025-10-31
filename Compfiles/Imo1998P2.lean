@@ -195,7 +195,7 @@ theorem distinct_judge_pairs_card_lower_bound {z : ℕ} (hJ : Fintype.card J = 2
       suffices p.judge₁ = p.judge₂ by simp [this]
       aesop
   have hst' : (s \ t).card = 2 * z + 1 := by rw [hst, Finset.diag_card, ← hJ]; rfl
-  rw [Finset.filter_and, ← Finset.sdiff_sdiff_self_left s t, Finset.card_sdiff]
+  rw [Finset.filter_and, ← Finset.sdiff_sdiff_self_left s t, Finset.card_sdiff_of_subset]
   · rw [hst']; exact Nat.le_sub_of_add_le hs
   · apply Finset.sdiff_subset
 
@@ -235,9 +235,9 @@ problem imo1998_p2 [Fintype J] [Fintype C] (a b k : ℕ) (hC : Fintype.card C = 
     simp only [mul_comm, add_mul, one_mul, add_tsub_cancel_right]; ring
   have hr : 2 * z * z * a = 2 * z * a * z := by ring
   rw [hl, hr] at h
-  cases' z with z
-  · simp
-  · exact le_of_mul_le_mul_right h z.succ_pos
+  cases z with
+  | zero => simp
+  | succ z => exact le_of_mul_le_mul_right h z.succ_pos
 
 
 end Imo1998P2

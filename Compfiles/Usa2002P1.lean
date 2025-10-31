@@ -110,19 +110,14 @@ lemma usa2002_p1_generalized
                 (f a = Color.red ↔ s ∉ a ∧ f' (Finset.subtype _ a) = Color.red) := by
         intro a
         constructor
-        · intro ha
-          have haa : s ∉ a := by
-            intro hns
-            simp [hns, f] at ha
-          simp only [haa, f] at ha
-          exact ⟨haa, ha⟩
+        · cutsat
         · intro hsa
           simp [hsa, f]
       constructor
       · intro s1 s2 hs12
         obtain ⟨h4, _⟩ := h2 s1
         obtain ⟨h4', _⟩ := h2 s2
-        obtain hfs1 | hfs1 := Classical.em (f s1 = Color.red)
+        by_cases hfs1 : f s1 = Color.red
         · obtain ⟨h6, h7⟩ := h4 hfs1
           have hfs2 : f s2 = Color.red := by rwa [hs12] at hfs1
           obtain ⟨h6', h7'⟩ := h4' hfs2
@@ -132,18 +127,11 @@ lemma usa2002_p1_generalized
           rw [Finset.subtype_union, Finset.union_comm]
           rw [h7'] at h8
           convert h8
-        · obtain hss | hss := Classical.em (s ∈ s1 ∪ s2)
+        · by_cases hss : s ∈ s1 ∪ s2
           · unfold f
             simp only [Finset.mem_union] at hss
             simp only [Finset.mem_union, hss, ite_true]
-            cases' hss with hss hss
-            · simp [hss]
-            · split_ifs with h
-              · rfl
-              · simp only [h, f] at hfs1
-                match h20 : (f' (Finset.subtype (fun a => ¬a = s) s1)) with
-                | Color.red => exact (hfs1 h20).elim
-                | Color.blue => rfl
+            cutsat
           · -- s1 ∪ s2 is in S'
             simp only [hss, f]
             rw [Finset.mem_union, not_or] at hss
@@ -196,7 +184,7 @@ lemma usa2002_p1_generalized
       · intro s1 s2 hs12
         obtain ⟨h4, _⟩ := h2 s1
         obtain ⟨h4', _⟩ := h2 s2
-        obtain hfs1 | hfs1 := Classical.em (f s1 = Color.blue)
+        by_cases hfs1 : f s1 = Color.blue
         · obtain ⟨h6, h7⟩ := h4 hfs1
           have hfs2 : f s2 = Color.blue := by rwa [hs12] at hfs1
           obtain ⟨h6', h7'⟩ := h4' hfs2
@@ -207,7 +195,7 @@ lemma usa2002_p1_generalized
           simp (config := { decide := true }) only [↓reduceIte, ne_eq]
           rw [h7'] at h8
           convert h8
-        · obtain hss | hss := Classical.em (s ∈ s1 ∪ s2)
+        · by_cases hss : s ∈ s1 ∪ s2
           · unfold f
             simp only [Finset.mem_union] at hss
             simp only [Finset.mem_union, hss, ite_true]
@@ -236,10 +224,10 @@ lemma usa2002_p1_generalized
             split_ifs at hxy with h4 h5 h6
             · simp at hxy; exact SetCoe.ext hxy
             · simp only [Sum.inr.injEq, Subtype.mk.injEq] at hxy
-              cases' (h2' x).mp hx with hxx hxx
+              obtain hxx | hxx := (h2' x).mp hx
               · contradiction
               · rw [Finset.ext_iff] at hxy
-                cases' (h2' y).mp hy with hyy hyy
+                obtain hyy | hyy := (h2' y).mp hy
                 · contradiction
                 · simp only [Finset.mem_subtype, Subtype.forall] at hxy
                   rw [Subtype.mk.injEq]

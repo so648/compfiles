@@ -102,20 +102,12 @@ lemma key_lemma'  {m b: ℕ } (h1 : 1 < m)
     replace h2 := Nat.mul_self_lt_mul_self_iff.1 h2
     omega
 
-lemma dvd_lemma (a b c : ℕ ) (h : c ≠ 0) : a ≤ b → b ∣ c → c < 2*a → b = c := by
-  intro h1 h2 h3
-  obtain ⟨k,hk⟩ := h2
+lemma dvd_lemma (a b c : ℕ ) (h : c ≠ 0) : a ≤ b → b ∣ c → c < 2 * a → b = c := by
+  intro h1 ⟨k, hk⟩ h3
   match k with
   | 0 => simp at hk; exfalso; exact h hk
   | 1 => simp [hk]
-  | k+2 =>
-    have hh : 2 * a ≤ c := by
-      calc
-      2 * a ≤ 2 * b := by omega
-      _ ≤ 2*b + k * b := by simp
-      _ = b *(k+2) := by ring_nf
-      _ = c := hk.symm
-    omega
+  | k + 2 => cutsat
 
 lemma zero_of_le_sub_pos {a b : ℕ} : b ≠ 0 → a ≤ a - b → a = 0 := by omega
 
@@ -160,7 +152,7 @@ problem imo1987_p6
       _ = _:= hN0
       _ ≤  3*r^2 + 6*r + 2 + (r+s)*(r+s+1) := by nlinarith only [hN0, ieq4, hs, hksr]
       _ = 4*r^2 + 2* r*s + s^2 + 7*r+s+2 := by ring_nf
-      _ < 4*r^2 +4*s^2 +8*r*s+4*r+4*s+1 := by nlinarith
+      _ < 4*r^2 +4*s^2 +8*r*s+4*r+4*s+1 := by cutsat
       _ = _ := by ring
     rw [<-hksr] at hN1
 
@@ -189,8 +181,9 @@ problem imo1987_p6
         rw [Int.natCast_sub hj2,hss0,<-hksr]
         push_cast
         ring_nf
-      rw [hfss,Nat.coprime_add_mul_right_left] at hj3
-      have hss2 : f ss ∣  j:= Nat.Prime.dvd_iff_not_coprime hss1 |>.2 hj3
+      change ¬N.gcd j = 1 at hj3
+      rw [hfss, ←Nat.coprime_iff_gcd_eq_one, Nat.coprime_add_mul_right_left] at hj3
+      have hss2 : f ss ∣ j := Nat.Prime.dvd_iff_not_coprime hss1 |>.2 hj3
       have hfss1: p ≤ f ss := Nat.le_add_left p (ss ^ 2 + ss)
       have hp1 : p - 2 < p := sub_le_lemma hp (by omega)
       have hfss2: j < 2*p := by omega
