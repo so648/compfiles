@@ -4,8 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: David Renshaw
 -/
 
+import Mathlib.Data.Set.Lattice
+import Mathlib.Data.Fin.Basic
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.IntervalCases
+
 
 import ProblemExtraction
 
@@ -97,11 +100,36 @@ def coloring_of_eight {n : ℕ} : Set.Icc 1 n → Fin 2
 | ⟨7, _⟩ => 1
 | ⟨8, _⟩ => 0
 | _ => 0 -- unreachable  (9以上の部分は0)
---長さ8の場合、goodではない例が存在した。
---⟨k, _⟩ の _ は「1 ≤ k ≤ n の証明」です。その数が範囲 [1 , n] に含まれているという証拠も
+--長さ8で、上の例を挙げる(これをcoloring_of_eightとする)
+--⟨k, _⟩ の _ は1 ≤ k ≤ n で、その数が範囲 [1 , n] に含まれているという証拠も
 --含んだペアとして扱う
 
 lemma lemma2 :
+    ∃ f : Set.Icc 1 8 → Fin 2, ¬coloring_is_good f := by
+  --[1, 8]を2色に塗り分けても、goodにならない例が存在することの証明
+  use coloring_of_eight-- 上で定義した coloring_of_eight を使う
+  intro h -- good (h) と仮定して矛盾を導く
+  rcases h with ⟨⟨i, hi⟩, ⟨j, hj⟩, hij1, h_k, hc1, hc2⟩
+  -- i と j を ℕ として取り出し、その範囲の仮定 hi, hj を得る
+  simp only [Set.mem_Icc] at hi hj
+  -- hi (i ∈ [1, 8]) を 1 ≤ i ∧ i ≤ 8 に書き換える
+  cases hi; cases hj
+  -- interval_cases i のためにhiを (1 ≤ i) と (i ≤ 8) に分解する。jについても同様
+  interval_cases i <;> interval_cases j
+  --i と j の 8x8=64 通りの場合分けを行う
+  all_goals
+  -- 64個のゴールすべて (all_goals) に
+  -- 以下のタクティク (;) を順番に適用する
+    (simp only [coloring_of_eight] at *;
+    -- まず、my_coloring_of_eight の定義のみ
+    -- 仮定とゴール (at *) で展開する。
+     simp at *)
+    -- 次に、残りの仮定 (hij1 や h_k) と、
+    -- 前段階でで生成された 0 = 1 などをすべてsimpする
+    -- これにより、仮定 (1<1 とか 9≤8 とか 0=1) の
+    -- どれかが False となりok
+
+/-lemma lemma2 :
     ∃ f : Set.Icc 1 8 → Fin 2, ¬coloring_is_good f := by
   --区間 [1 ,8] に対してある 2 色塗りが存在し、その塗り分けは good ではない（同色の 3 項等差が存在しない）
   use coloring_of_eight
@@ -109,28 +137,54 @@ lemma lemma2 :
   obtain ⟨⟨i, hi1, hi2⟩, ⟨j, hj1, hj2⟩, hij1, hij2, hc1, hc2⟩ := h
   dsimp [coloring_of_eight] at *
   interval_cases i <;> interval_cases j <;> sorry --aesop (simp_config := {decide := true})
+-/
+--このaesopというのが何かよく分からなかった
 
 snip end
 
 determine solution_value : ℕ := 9
 
-problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } solution_value := by
---[1 ,m] の任意の2色塗りで good が必ずできる最小の自然数 m は solution_value(9) である
+problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } 9 := by
   constructor
-  --solution_value ∈ S と、solution_value より小さい自然数は S に入らない　に分解
-  · rw [Set.mem_setOf_eq]  --all_colorings_are_good m を証明すればよい。
-    refine ⟨by norm_num, ?_⟩  --by norm_num で 3 ≤ solution_value を証明している
-                             --?_ の部分が次の「任意の coloring が good であること」を証明する箇所
-    intro color  --「任意の coloring」を取る準備
+  · -- ステップ1: n=9のときに、すべての塗分けがgoodであることを証明する
+    --(こちらは2^9=512通り考える方法しか思い浮かばず)
+    simp only [Set.mem_setOf_eq]
+    refine ⟨by norm_num, ?_⟩
+    intro color
     sorry
-  · rw [mem_lowerBounds]  --「IsLeast の定義」により、全ての下界 n について考える
-    intro n hn  --「solution_value より小さい n が S に入ると仮定」
-    rw [Set.mem_setOf_eq] at hn
-    by_contra! H
-    have h1 : n ≤ solution_value - 1 := Nat.le_pred_of_lt H
-    have ⟨h2, h3⟩ := lemma1 h1 hn
-    obtain ⟨f, hf⟩ := lemma2
-    exact (hf (h3 f)).elim
+  /-
+  1-2-3-4-5-6-7-8-9
 
+  0-0-1-0-0-1-1-×
+  0-0-1-0-1-1-×
+  0-0-1-1-0-0-1-1-×　○
+  0-0-1-1-0-1-0-×
+  0-0-1-1-0-1-1-×
+
+  0-1-0-0-1-0-1-×
+  0-1-0-0-1-1-×
+  0-1-0-1-1-0-0-×
+  0-1-0-1-1-0-1-0-×　○
+  0-1-1-0-0-1-1-0-×　○
+  0-1-1-0-1-0-×
+  0-1-1-0-1-1-×
+  -/
+
+  -- ステップ2: 9 が最小であることを証明する
+  rw [mem_lowerBounds]
+  intro n hn
+  rw [Set.mem_setOf_eq] at hn
+  by_contra! H  --goalをn<9がFalseであることを示す(背理法)に変更
+  have h1 : n ≤ 9 - 1 := Nat.le_pred_of_lt H
+  norm_num at h1 -- h1 : n ≤ 8
+  -- もし n (≤ 8) ですべての塗分けが good なら、
+  -- lemma1 より、8 ですべての塗分けが good なことになる
+  have h_all_good_8 := lemma1 h1 hn
+  -- しかし lemma2 は 8 の場合に good ではない塗分け (f) が存在すると言っている
+  obtain ⟨f, hf⟩ := lemma2
+  -- h_all_good_8.2 f は「f は good である」
+  -- hf は「f は good ではない」
+  -- よって矛盾
+  exact (hf (h_all_good_8.2 f)).elim
 
 end Bulgaria1998P1
