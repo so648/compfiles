@@ -8,7 +8,7 @@ import Mathlib.Data.Set.Lattice
 import Mathlib.Data.Fin.Basic
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.IntervalCases
-
+import Mathlib.Tactic.Linarith
 
 import ProblemExtraction
 
@@ -128,63 +128,209 @@ lemma lemma2 :
     -- 前段階でで生成された 0 = 1 などをすべてsimpする
     -- これにより、仮定 (1<1 とか 9≤8 とか 0=1) の
     -- どれかが False となりok
-
-/-lemma lemma2 :
-    ∃ f : Set.Icc 1 8 → Fin 2, ¬coloring_is_good f := by
-  --区間 [1 ,8] に対してある 2 色塗りが存在し、その塗り分けは good ではない（同色の 3 項等差が存在しない）
-  use coloring_of_eight
-  intro h
-  obtain ⟨⟨i, hi1, hi2⟩, ⟨j, hj1, hj2⟩, hij1, hij2, hc1, hc2⟩ := h
-  dsimp [coloring_of_eight] at *
-  interval_cases i <;> interval_cases j <;> sorry --aesop (simp_config := {decide := true})
--/
---このaesopというのが何かよく分からなかった
-
+    
 snip end
 
 determine solution_value : ℕ := 9
 
-problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } 9 := by
+-- 【メインの証明】9 が条件を満たす最小の数であることを証明する
+problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } solution_value := by
   constructor
-  · -- ステップ1: n=9のときに、すべての塗分けがgoodであることを証明する
-    --(こちらは2^9=512通り考える方法しか思い浮かばず)
-    simp only [Set.mem_setOf_eq]
-    refine ⟨by norm_num, ?_⟩
-    intro color
-    sorry
-  /-
-  1-2-3-4-5-6-7-8-9
+  · -- ステップ1: n=9 のとき、すべての塗り分けが良いことを証明する
+    change all_colorings_are_good 9
+    dsimp [all_colorings_are_good]
+    constructor
+    · norm_num -- 3 ≤ 9 は自明
+    · intro color
+      -- 背理法開始: もし「良くない (goodでない)」塗り分けが存在すると仮定する
+      by_contra h_bad
 
-  0-0-1-0-0-1-1-×
-  0-0-1-0-1-1-×
-  0-0-1-1-0-0-1-1-×　○
-  0-0-1-1-0-1-0-×
-  0-0-1-1-0-1-1-×
+      -- 記述を簡単にするため、color ⟨k, ...⟩ を c k と書けるようにする
+      let c (k : ℕ) (hk : k ∈ Set.Icc 1 9) := color ⟨k, hk⟩
 
-  0-1-0-0-1-0-1-×
-  0-1-0-0-1-1-×
-  0-1-0-1-1-0-0-×
-  0-1-0-1-1-0-1-0-×　○
-  0-1-1-0-0-1-1-0-×　○
-  0-1-1-0-1-0-×
-  0-1-1-0-1-1-×
-  -/
+      -- [補題A] 鳩の巣原理の変形: 「2色が等しくないなら、残りの色と等しい」
+      -- (x!=z かつ y!=z ならば、x,yは共にzじゃない方の色なので x=y)
+      have fin2_claim : ∀ (x y z : Fin 2), x ≠ z → y ≠ z → x = y := by
+        intro x y z hx hy
+        revert x y z hx hy
+        decide -- Fin 2 は有限なので計算で証明完了
 
-  -- ステップ2: 9 が最小であることを証明する
-  rw [mem_lowerBounds]
-  intro n hn
-  rw [Set.mem_setOf_eq] at hn
-  by_contra! H  --goalをn<9がFalseであることを示す(背理法)に変更
-  have h1 : n ≤ 9 - 1 := Nat.le_pred_of_lt H
-  norm_num at h1 -- h1 : n ≤ 8
-  -- もし n (≤ 8) ですべての塗分けが good なら、
-  -- lemma1 より、8 ですべての塗分けが good なことになる
-  have h_all_good_8 := lemma1 h1 hn
-  -- しかし lemma2 は 8 の場合に good ではない塗分け (f) が存在すると言っている
-  obtain ⟨f, hf⟩ := lemma2
-  -- h_all_good_8.2 f は「f は good である」
-  -- hf は「f は good ではない」
-  -- よって矛盾
-  exact (hf (h_all_good_8.2 f)).elim
+      -- [補題B] 「同色の等差数列を作ってはいけない」という制約
+      -- c(i)=c(j) ならば、3点目 c(k) はそれと異なる色でなければならない
+      have no_ap : ∀ (i j k : ℕ) (hi : i ∈ Set.Icc 1 9) (hj : j ∈ Set.Icc 1 9) (hk : k ∈ Set.Icc 1 9),
+          i < j → 2 * j - i = k → c i hi = c j hj → c k hk ≠ c j hj := by
+        intro i j k hi hj hk hij heq h_ci_cj h_ck_cj_eq
+        -- もし c(k) = c(j) なら、i, j, k は同色等差数列になる
+        -- これは「良くない塗り分け」という仮定 h_bad に矛盾する
+        apply h_bad
+        -- 矛盾する構成要素 (i, j, 証明) を渡す
+        refine ⟨⟨i, hi⟩, ⟨j, hj⟩, hij, ?_⟩
+        -- 3点目(2j-i)が範囲内にあることの証明
+        have h_idx : 2 * j - i = k := heq
+        refine ⟨h_idx.symm ▸ hk, ?_⟩
+        -- 色が一致することの証明
+        simp [c] at h_ci_cj h_ck_cj_eq
+        constructor
+        · exact h_ci_cj
+        · rw [h_ci_cj, ←h_ck_cj_eq]
+          congr
+          exact h_idx.symm
 
+      -- ここから具体的な背理法による探索
+      -- 1~9 が範囲内であることの証明をあらかじめ用意
+      let n1 : 1 ∈ Set.Icc 1 9 := by norm_num
+      let n2 : 2 ∈ Set.Icc 1 9 := by norm_num
+      let n3 : 3 ∈ Set.Icc 1 9 := by norm_num
+      let n4 : 4 ∈ Set.Icc 1 9 := by norm_num
+      let n5 : 5 ∈ Set.Icc 1 9 := by norm_num
+      let n6 : 6 ∈ Set.Icc 1 9 := by norm_num
+      let n7 : 7 ∈ Set.Icc 1 9 := by norm_num
+      let n8 : 8 ∈ Set.Icc 1 9 := by norm_num
+      let n9 : 9 ∈ Set.Icc 1 9 := by norm_num
+
+      -- [論証1] 中心に近い c(3) と c(5) は異なる色でなければならない
+      have c3_ne_c5 : c 3 n3 ≠ c 5 n5 := by
+        intro h -- 仮定: c(3) = c(5)
+        -- 1, 3, 5 は等差数列。c(1)はc(3)と異なる
+        have c1_ne : c 1 n1 ≠ c 3 n3 := by
+          intro h1
+          exact no_ap 1 3 5 n1 n3 n5 (by norm_num) (by norm_num) h1 h.symm
+        -- 3, 5, 7 は等差数列。c(7)はc(5)と異なる
+        have c7_ne : c 7 n7 ≠ c 5 n5 :=
+          no_ap 3 5 7 n3 n5 n7 (by norm_num) (by norm_num) h
+        -- 3, 4, 5 は等差数列。c(4)はc(3)と異なる
+        have c4_ne : c 4 n4 ≠ c 3 n3 := by
+          intro h4
+          apply no_ap 3 4 5 n3 n4 n5 (by norm_num) (by norm_num) h4.symm
+          rw [h4, h]
+        -- c(1), c(4), c(7) はすべて c(3) と異なる色。よってこれら3つは同色。
+        have c1_eq_c4 : c 1 n1 = c 4 n4 := fin2_claim _ _ (c 3 n3) c1_ne c4_ne
+        have c4_eq_c7 : c 4 n4 = c 7 n7 := by
+           rw [←h] at c7_ne
+           exact fin2_claim _ _ (c 3 n3) c4_ne c7_ne
+        -- しかし 1, 4, 7 も等差数列なので、これらが同色だと矛盾！
+        apply no_ap 1 4 7 n1 n4 n7 (by norm_num) (by norm_num) c1_eq_c4
+        exact c4_eq_c7.symm
+
+      -- [論証2] 対称性より c(5) と c(7) も異なる色でなければならない
+      have c5_ne_c7 : c 5 n5 ≠ c 7 n7 := by
+        intro h -- 仮定: c(5) = c(7)
+        -- 以下、論証1と同様のロジック
+        have c3_ne : c 3 n3 ≠ c 5 n5 := by
+           intro h3
+           exact no_ap 3 5 7 n3 n5 n7 (by norm_num) (by norm_num) h3 h.symm
+        have c9_ne : c 9 n9 ≠ c 7 n7 :=
+           no_ap 5 7 9 n5 n7 n9 (by norm_num) (by norm_num) h
+        have c6_ne : c 6 n6 ≠ c 5 n5 := by
+           intro h6
+           apply no_ap 5 6 7 n5 n6 n7 (by norm_num) (by norm_num) h6.symm
+           rw [h6, h]
+        -- c(3), c(6), c(9) が同色になり、3-6-9 で矛盾
+        have c3_eq_c6 : c 3 n3 = c 6 n6 := fin2_claim _ _ (c 5 n5) c3_ne c6_ne
+        have c6_eq_c9 : c 6 n6 = c 9 n9 := by
+           rw [←h] at c9_ne
+           exact fin2_claim _ _ (c 5 n5) c6_ne c9_ne
+        apply no_ap 3 6 9 n3 n6 n9 (by norm_num) (by norm_num) c3_eq_c6
+        exact c6_eq_c9.symm
+
+      -- [まとめ] c(3) != c(5) かつ c(7) != c(5) なので、c(3) == c(7)
+      have c3_eq_c7 : c 3 n3 = c 7 n7 := fin2_claim _ _ (c 5 n5) c3_ne_c5 (Ne.symm c5_ne_c7)
+
+      -- 最後に c(4) の色で場合分けをして矛盾を追い詰める
+      by_cases h45 : c 4 n4 = c 5 n5
+      · -- ケース1: c(4) == c(5) の場合
+        -- 4,5,6 より c(6)!=c(5)
+        have c6_ne : c 6 n6 ≠ c 5 n5 := no_ap 4 5 6 n4 n5 n6 (by norm_num) (by norm_num) h45
+        -- c(6)!=c(5) かつ c(3)!=c(5) より c(6)=c(3)=c(7)
+        have c6_eq_c3 : c 6 n6 = c 3 n3 := fin2_claim _ _ (c 5 n5) c6_ne c3_ne_c5
+
+        -- 3,6,9 より c(9)!=c(6)=c(3)=c(7)。よって c(9)=c(5)
+        have c9_ne : c 9 n9 ≠ c 6 n6 := by
+           intro h
+           apply no_ap 3 6 9 n3 n6 n9 (by norm_num) (by norm_num) c6_eq_c3.symm
+           exact h
+        have c9_eq : c 9 n9 = c 5 n5 := fin2_claim _ _ (c 6 n6) c9_ne (Ne.symm c6_ne)
+
+        -- 1,5,9 より c(1)!=c(5)。よって c(1)=c(3)=c(6)
+        have c1_ne : c 1 n1 ≠ c 5 n5 := by
+           intro h
+           have contra := no_ap 1 5 9 n1 n5 n9 (by norm_num) (by norm_num) h
+           exact contra c9_eq
+        have c1_eq : c 1 n1 = c 3 n3 := fin2_claim _ _ (c 5 n5) c1_ne c3_ne_c5
+
+        -- 1,2,3 より c(2)!=c(1)=c(3)。よって c(2)=c(5)
+        have c2_ne : c 2 n2 ≠ c 1 n1 := by
+           intro h
+           apply no_ap 1 2 3 n1 n2 n3 (by norm_num) (by norm_num) h.symm
+           rw [←c1_eq]
+           exact h.symm
+        have c2_eq : c 2 n2 = c 5 n5 := fin2_claim _ _ (c 1 n1) c2_ne (Ne.symm c1_ne)
+
+        -- 2,5,8 より c(8)!=c(5)=c(2)。よって c(8)=c(1)=c(3)=c(6)=c(7)
+        have c8_ne : c 8 n8 ≠ c 5 n5 := by
+           apply no_ap 2 5 8 n2 n5 n8 (by norm_num) (by norm_num) c2_eq
+        have c8_eq : c 8 n8 = c 3 n3 := fin2_claim _ _ (c 5 n5) c8_ne c3_ne_c5
+
+        -- 6, 7, 8 がすべて c(3) と同色になり、長さ3の同色AP完成 → 矛盾！
+        apply no_ap 6 7 8 n6 n7 n8 (by norm_num) (by norm_num)
+        · rw [c6_eq_c3, c3_eq_c7]
+        · rw [c8_eq, c3_eq_c7]
+
+      · -- ケース2: c(4) != c(5) の場合 (つまり c(4) = c(3))
+        have c4_eq : c 4 n4 = c 3 n3 := fin2_claim _ _ (c 5 n5) h45 c3_ne_c5
+
+        -- 1,4,7 は c(1), c(3), c(3) なので c(1)!=c(3)。よって c(1)=c(5)
+        have c1_ne : c 1 n1 ≠ c 4 n4 := by
+          intro h
+          have := no_ap 1 4 7 n1 n4 n7 (by norm_num) (by norm_num) h
+          rw [c4_eq, c3_eq_c7] at this
+          exact this rfl
+        have c1_eq : c 1 n1 = c 5 n5 := fin2_claim _ _ (c 4 n4) c1_ne (Ne.symm h45)
+
+        -- 1,5,9 は c(5), c(5), c(9) なので c(9)!=c(5)。よって c(9)=c(3)
+        have c9_ne : c 9 n9 ≠ c 5 n5 := by
+           intro h
+           apply no_ap 1 5 9 n1 n5 n9 (by norm_num) (by norm_num) c1_eq
+           exact h
+        have c9_eq : c 9 n9 = c 3 n3 := fin2_claim _ _ (c 5 n5) c9_ne c3_ne_c5
+
+        -- 3,6,9 は c(3), c(6), c(3) なので c(6)!=c(3)。よって c(6)=c(5)
+        have c6_ne : c 6 n6 ≠ c 3 n3 := by
+           intro h
+           apply no_ap 3 6 9 n3 n6 n9 (by norm_num) (by norm_num) h.symm
+           rw [h, c9_eq]
+        have c6_eq : c 6 n6 = c 5 n5 := fin2_claim _ _ (c 3 n3) c6_ne (Ne.symm c3_ne_c5)
+
+        -- 7,8,9 は c(3), c(8), c(3) なので c(8)!=c(3)。よって c(8)=c(5)
+        have c8_ne : c 8 n8 ≠ c 7 n7 := by
+          intro h
+          have := no_ap 7 8 9 n7 n8 n9 (by norm_num) (by norm_num) h.symm
+          rw [c9_eq, c3_eq_c7] at this
+          rw [h] at this
+          exact this rfl
+        have c8_eq : c 8 n8 = c 5 n5 := fin2_claim _ _ (c 7 n7) c8_ne c5_ne_c7
+
+        -- 2,5,8 は c(2), c(5), c(5) なので c(2)!=c(5)。よって c(2)=c(3)
+        have c2_ne : c 2 n2 ≠ c 5 n5 := by
+           intro h
+           apply no_ap 2 5 8 n2 n5 n8 (by norm_num) (by norm_num) h
+           exact c8_eq
+        have c2_eq : c 2 n2 = c 3 n3 := fin2_claim _ _ (c 5 n5) c2_ne c3_ne_c5
+
+        -- 2, 3, 4 がすべて c(3) と同色になり、矛盾！
+        apply no_ap 2 3 4 n2 n3 n4 (by norm_num) (by norm_num) c2_eq
+        exact c4_eq
+
+  · -- ステップ2: 9 が最小であることを証明する
+    rw [mem_lowerBounds]
+    intro n hn
+    rw [Set.mem_setOf_eq] at hn
+    -- もし n < 9 で成り立つなら (つまり n <= 8 なら)
+    by_contra! H
+    have h1 : n ≤ 8 := Nat.le_pred_of_lt H
+    -- lemma1 より n=8 でも成り立たなければならない
+    have h_all_good_8 := lemma1 h1 hn
+    -- しかし lemma2 で反例を示したので矛盾する
+    obtain ⟨f, hf⟩ := lemma2
+    exact hf (h_all_good_8.2 f)
 end Bulgaria1998P1
