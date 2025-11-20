@@ -128,7 +128,7 @@ lemma lemma2 :
     -- 前段階でで生成された 0 = 1 などをすべてsimpする
     -- これにより、仮定 (1<1 とか 9≤8 とか 0=1) の
     -- どれかが False となりok
-    
+
 snip end
 
 determine solution_value : ℕ := 9
@@ -208,7 +208,7 @@ problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } solution_valu
         have c4_eq_c7 : c 4 n4 = c 7 n7 := by
            rw [←h] at c7_ne
            exact fin2_claim _ _ (c 3 n3) c4_ne c7_ne
-        -- しかし 1, 4, 7 も等差数列なので、これらが同色だと矛盾！
+        -- しかし 1, 4, 7 も等差数列なので、これらが同色だと矛盾
         apply no_ap 1 4 7 n1 n4 n7 (by norm_num) (by norm_num) c1_eq_c4
         exact c4_eq_c7.symm
 
@@ -271,7 +271,7 @@ problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } solution_valu
            apply no_ap 2 5 8 n2 n5 n8 (by norm_num) (by norm_num) c2_eq
         have c8_eq : c 8 n8 = c 3 n3 := fin2_claim _ _ (c 5 n5) c8_ne c3_ne_c5
 
-        -- 6, 7, 8 がすべて c(3) と同色になり、長さ3の同色AP完成 → 矛盾！
+        -- 6, 7, 8 がすべて c(3) と同色になり、長さ3の同色AP完成 → 矛盾
         apply no_ap 6 7 8 n6 n7 n8 (by norm_num) (by norm_num)
         · rw [c6_eq_c3, c3_eq_c7]
         · rw [c8_eq, c3_eq_c7]
@@ -317,7 +317,7 @@ problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } solution_valu
            exact c8_eq
         have c2_eq : c 2 n2 = c 3 n3 := fin2_claim _ _ (c 5 n5) c2_ne c3_ne_c5
 
-        -- 2, 3, 4 がすべて c(3) と同色になり、矛盾！
+        -- 2, 3, 4 がすべて c(3) と同色になり、矛盾
         apply no_ap 2 3 4 n2 n3 n4 (by norm_num) (by norm_num) c2_eq
         exact c4_eq
 
