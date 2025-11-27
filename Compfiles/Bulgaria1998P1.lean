@@ -138,32 +138,33 @@ problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } solution_valu
   constructor
   · -- ステップ1: n=9 のとき、すべての塗り分けが良いことを証明する
     change all_colorings_are_good 9
-    dsimp [all_colorings_are_good]
+    dsimp [all_colorings_are_good] --3 ≤ 9 ∧ ∀ (color : ↑(Set.Icc 1 9) → Fin 2), coloring_is_good color
     constructor
     · norm_num -- 3 ≤ 9 は自明
-    · intro color
-      -- 背理法開始: もし「良くない (goodでない)」塗り分けが存在すると仮定する
-      by_contra h_bad
-
-      -- 記述を簡単にするため、color ⟨k, ...⟩ を c k と書けるようにする
+    · intro color  -- ∀ (color : ↑(Set.Icc 1 9) → Fin 2), coloring_is_good colorを示す
+      by_contra h_bad  --背理法で、もしgoodではない塗り分けが存在すると仮定する
       let c (k : ℕ) (hk : k ∈ Set.Icc 1 9) := color ⟨k, hk⟩
+      -- 記述を簡単にするために、color ⟨k, ...⟩ を c(k) と書けるようにする
 
-      -- [補題A] 鳩の巣原理の変形: 「2色が等しくないなら、残りの色と等しい」
-      -- (x!=z かつ y!=z ならば、x,yは共にzじゃない方の色なので x=y)
+      --最初に、2つ補題を用意しておく。
+      -- ここで、[補題１]：2色使う時に、2色が等しくないなら、残りの色と等しい　を示す
+      -- claimは主張
+      -- (すなわち、x ≠ z かつ y ≠ z ならば、x,yは共にzじゃない方の色なので x = y)
       have fin2_claim : ∀ (x y z : Fin 2), x ≠ z → y ≠ z → x = y := by
         intro x y z hx hy
         revert x y z hx hy
         decide -- Fin 2 は有限なので計算で証明完了
 
-      -- [補題B] 「同色の等差数列を作ってはいけない」という制約
-      -- c(i)=c(j) ならば、3点目 c(k) はそれと異なる色でなければならない
+      -- [補題2]：等差数列禁止に関する制約
+      -- i, j, k が等差数列で、c(i)=c(j) ならば、c(k) はそれと異なる色でなければならない
+      -- もし同じ色だと、badという仮定(h_bad)に矛盾するから
+      -- no_ap は、No Arithmetic Progressionの略として書いてみた
       have no_ap : ∀ (i j k : ℕ) (hi : i ∈ Set.Icc 1 9) (hj : j ∈ Set.Icc 1 9) (hk : k ∈ Set.Icc 1 9),
           i < j → 2 * j - i = k → c i hi = c j hj → c k hk ≠ c j hj := by
         intro i j k hi hj hk hij heq h_ci_cj h_ck_cj_eq
-        -- もし c(k) = c(j) なら、i, j, k は同色等差数列になる
-        -- これは「良くない塗り分け」という仮定 h_bad に矛盾する
+        -- もし c(k) = c(j) なら、i, j, k は同色等差数列になるので、
         apply h_bad
-        -- 矛盾する構成要素 (i, j, 証明) を渡す
+        -- goodなものは存在しない という仮定に矛盾することを示す
         refine ⟨⟨i, hi⟩, ⟨j, hj⟩, hij, ?_⟩
         -- 3点目(2j-i)が範囲内にあることの証明
         have h_idx : 2 * j - i = k := heq
@@ -171,13 +172,14 @@ problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } solution_valu
         -- 色が一致することの証明
         simp [c] at h_ci_cj h_ck_cj_eq
         constructor
+        --color ⟨i, hi⟩ = color ⟨j, hj⟩ ∧ color ⟨i, hi⟩ = color ⟨2 * ↑⟨j, hj⟩ - ↑⟨i, hi⟩, ⋯⟩
         · exact h_ci_cj
         · rw [h_ci_cj, ←h_ck_cj_eq]
           congr
           exact h_idx.symm
 
-      -- ここから具体的な背理法による探索
-      -- 1~9 が範囲内であることの証明をあらかじめ用意
+      -- ここから具体的な背理法による探索をするが、fin2_claim と no_apを使って探索していく。
+      -- 最初に、1~9 が範囲内であることの証明をあらかじめ用意しておく。
       let n1 : 1 ∈ Set.Icc 1 9 := by norm_num
       let n2 : 2 ∈ Set.Icc 1 9 := by norm_num
       let n3 : 3 ∈ Set.Icc 1 9 := by norm_num
@@ -188,7 +190,15 @@ problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } solution_valu
       let n8 : 8 ∈ Set.Icc 1 9 := by norm_num
       let n9 : 9 ∈ Set.Icc 1 9 := by norm_num
 
-      -- [論証1] 中心に近い c(3) と c(5) は異なる色でなければならない
+      /-順序
+      [a] c(3)とc(5)が異なる色であることを示す。
+      [b] c(5)とc(7)が異なる色であることを示す。
+      [c] [a]と[b]から、c(3)とc(7)が同じ色であることが示される。
+      [d] c(4)とc(5)が同じ色である場合、矛盾することを示す。
+      [e] c(4)とc(5)が異なる色である場合、矛盾することを示す。
+      -/
+
+      -- [a] 中心に近い c(3) と c(5) は異なる色でなければならない
       have c3_ne_c5 : c 3 n3 ≠ c 5 n5 := by
         intro h -- 仮定: c(3) = c(5)
         -- 1, 3, 5 は等差数列。c(1)はc(3)と異なる
@@ -212,15 +222,18 @@ problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } solution_valu
         apply no_ap 1 4 7 n1 n4 n7 (by norm_num) (by norm_num) c1_eq_c4
         exact c4_eq_c7.symm
 
-      -- [論証2] 対称性より c(5) と c(7) も異なる色でなければならない
+      -- [b] 対称性より c(5) と c(7) も異なる色でなければならない
       have c5_ne_c7 : c 5 n5 ≠ c 7 n7 := by
         intro h -- 仮定: c(5) = c(7)
-        -- 以下、論証1と同様のロジック
+        -- 以下、論証1と同様に証明する
+        -- 3, 5, 7 は等差数列。c(3)とc(5)は異なる
         have c3_ne : c 3 n3 ≠ c 5 n5 := by
            intro h3
            exact no_ap 3 5 7 n3 n5 n7 (by norm_num) (by norm_num) h3 h.symm
+        -- 5, 7, 9 は等差数列。c(5)とc(9)は異なる
         have c9_ne : c 9 n9 ≠ c 7 n7 :=
            no_ap 5 7 9 n5 n7 n9 (by norm_num) (by norm_num) h
+        -- 5, 6, 7 は等差数列。c(5)とc(6)は異なる
         have c6_ne : c 6 n6 ≠ c 5 n5 := by
            intro h6
            apply no_ap 5 6 7 n5 n6 n7 (by norm_num) (by norm_num) h6.symm
@@ -233,32 +246,33 @@ problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } solution_valu
         apply no_ap 3 6 9 n3 n6 n9 (by norm_num) (by norm_num) c3_eq_c6
         exact c6_eq_c9.symm
 
-      -- [まとめ] c(3) != c(5) かつ c(7) != c(5) なので、c(3) == c(7)
+      -- [c] c(3) ≠ c(5) かつ c(7) ≠ c(5) なので、c(3) = c(7)
       have c3_eq_c7 : c 3 n3 = c 7 n7 := fin2_claim _ _ (c 5 n5) c3_ne_c5 (Ne.symm c5_ne_c7)
 
       -- 最後に c(4) の色で場合分けをして矛盾を追い詰める
+
       by_cases h45 : c 4 n4 = c 5 n5
-      · -- ケース1: c(4) == c(5) の場合
-        -- 4,5,6 より c(6)!=c(5)
+      · -- [d] c(4) = c(5) の場合
+        -- 4,5,6 より c(6) ≠ c(5)
         have c6_ne : c 6 n6 ≠ c 5 n5 := no_ap 4 5 6 n4 n5 n6 (by norm_num) (by norm_num) h45
-        -- c(6)!=c(5) かつ c(3)!=c(5) より c(6)=c(3)=c(7)
+        -- c(6) ≠ c(5) かつ c(3) ≠ c(5) より c(6)=c(3)=c(7)
         have c6_eq_c3 : c 6 n6 = c 3 n3 := fin2_claim _ _ (c 5 n5) c6_ne c3_ne_c5
 
-        -- 3,6,9 より c(9)!=c(6)=c(3)=c(7)。よって c(9)=c(5)
+        -- 3,6,9 より c(9) ≠ c(6)=c(3)=c(7)。よって c(9)=c(5)
         have c9_ne : c 9 n9 ≠ c 6 n6 := by
            intro h
            apply no_ap 3 6 9 n3 n6 n9 (by norm_num) (by norm_num) c6_eq_c3.symm
            exact h
         have c9_eq : c 9 n9 = c 5 n5 := fin2_claim _ _ (c 6 n6) c9_ne (Ne.symm c6_ne)
 
-        -- 1,5,9 より c(1)!=c(5)。よって c(1)=c(3)=c(6)
+        -- 1,5,9 より c(1) ≠ c(5)。よって c(1)=c(3)=c(6)
         have c1_ne : c 1 n1 ≠ c 5 n5 := by
            intro h
            have contra := no_ap 1 5 9 n1 n5 n9 (by norm_num) (by norm_num) h
            exact contra c9_eq
         have c1_eq : c 1 n1 = c 3 n3 := fin2_claim _ _ (c 5 n5) c1_ne c3_ne_c5
 
-        -- 1,2,3 より c(2)!=c(1)=c(3)。よって c(2)=c(5)
+        -- 1,2,3 より c(2) ≠ c(1)=c(3)。よって c(2)=c(5)
         have c2_ne : c 2 n2 ≠ c 1 n1 := by
            intro h
            apply no_ap 1 2 3 n1 n2 n3 (by norm_num) (by norm_num) h.symm
@@ -266,20 +280,21 @@ problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } solution_valu
            exact h.symm
         have c2_eq : c 2 n2 = c 5 n5 := fin2_claim _ _ (c 1 n1) c2_ne (Ne.symm c1_ne)
 
-        -- 2,5,8 より c(8)!=c(5)=c(2)。よって c(8)=c(1)=c(3)=c(6)=c(7)
+        -- 2,5,8 より c(8) ≠ c(5)=c(2)。よって c(8)=c(1)=c(3)=c(6)=c(7)
         have c8_ne : c 8 n8 ≠ c 5 n5 := by
            apply no_ap 2 5 8 n2 n5 n8 (by norm_num) (by norm_num) c2_eq
         have c8_eq : c 8 n8 = c 3 n3 := fin2_claim _ _ (c 5 n5) c8_ne c3_ne_c5
 
-        -- 6, 7, 8 がすべて c(3) と同色になり、長さ3の同色AP完成 → 矛盾
+        -- 6, 7, 8 がすべて c(3) と同色になり、長さ3の同色等差数列が完成したので矛盾
         apply no_ap 6 7 8 n6 n7 n8 (by norm_num) (by norm_num)
         · rw [c6_eq_c3, c3_eq_c7]
         · rw [c8_eq, c3_eq_c7]
 
-      · -- ケース2: c(4) != c(5) の場合 (つまり c(4) = c(3))
+
+      · -- [e] c(4) ≠  c(5) の場合 (つまり c(4) = c(3))
         have c4_eq : c 4 n4 = c 3 n3 := fin2_claim _ _ (c 5 n5) h45 c3_ne_c5
 
-        -- 1,4,7 は c(1), c(3), c(3) なので c(1)!=c(3)。よって c(1)=c(5)
+        -- 1,4,7 は c(1), c(3), c(3) なので c(1) ≠ c(3)。よって c(1)=c(5)
         have c1_ne : c 1 n1 ≠ c 4 n4 := by
           intro h
           have := no_ap 1 4 7 n1 n4 n7 (by norm_num) (by norm_num) h
@@ -287,21 +302,21 @@ problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } solution_valu
           exact this rfl
         have c1_eq : c 1 n1 = c 5 n5 := fin2_claim _ _ (c 4 n4) c1_ne (Ne.symm h45)
 
-        -- 1,5,9 は c(5), c(5), c(9) なので c(9)!=c(5)。よって c(9)=c(3)
+        -- 1,5,9 は c(5), c(5), c(9) なので c(9) ≠ c(5)。よって c(9)=c(3)
         have c9_ne : c 9 n9 ≠ c 5 n5 := by
            intro h
            apply no_ap 1 5 9 n1 n5 n9 (by norm_num) (by norm_num) c1_eq
            exact h
         have c9_eq : c 9 n9 = c 3 n3 := fin2_claim _ _ (c 5 n5) c9_ne c3_ne_c5
 
-        -- 3,6,9 は c(3), c(6), c(3) なので c(6)!=c(3)。よって c(6)=c(5)
+        -- 3,6,9 は c(3), c(6), c(3) なので c(6) ≠ c(3)。よって c(6)=c(5)
         have c6_ne : c 6 n6 ≠ c 3 n3 := by
            intro h
            apply no_ap 3 6 9 n3 n6 n9 (by norm_num) (by norm_num) h.symm
            rw [h, c9_eq]
         have c6_eq : c 6 n6 = c 5 n5 := fin2_claim _ _ (c 3 n3) c6_ne (Ne.symm c3_ne_c5)
 
-        -- 7,8,9 は c(3), c(8), c(3) なので c(8)!=c(3)。よって c(8)=c(5)
+        -- 7,8,9 は c(3), c(8), c(3) なので c(8) ≠ c(3)。よって c(8)=c(5)
         have c8_ne : c 8 n8 ≠ c 7 n7 := by
           intro h
           have := no_ap 7 8 9 n7 n8 n9 (by norm_num) (by norm_num) h.symm
@@ -310,7 +325,7 @@ problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } solution_valu
           exact this rfl
         have c8_eq : c 8 n8 = c 5 n5 := fin2_claim _ _ (c 7 n7) c8_ne c5_ne_c7
 
-        -- 2,5,8 は c(2), c(5), c(5) なので c(2)!=c(5)。よって c(2)=c(3)
+        -- 2,5,8 は c(2), c(5), c(5) なので c(2) ≠ c(5)。よって c(2)=c(3)
         have c2_ne : c 2 n2 ≠ c 5 n5 := by
            intro h
            apply no_ap 2 5 8 n2 n5 n8 (by norm_num) (by norm_num) h
@@ -333,4 +348,5 @@ problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } solution_valu
     -- しかし lemma2 で反例を示したので矛盾する
     obtain ⟨f, hf⟩ := lemma2
     exact hf (h_all_good_8.2 f)
+
 end Bulgaria1998P1
