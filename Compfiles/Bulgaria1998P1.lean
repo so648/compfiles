@@ -33,7 +33,7 @@ of n points are good.
 
 namespace Bulgaria1998P1
 
-abbrev coloring_is_good {m : ℕ} (color : Set.Icc 1 m → Fin 2) : Prop :=
+def coloring_is_good {m : ℕ} (color : Set.Icc 1 m → Fin 2) : Prop :=
   ∃ i j : Set.Icc 1 m,
     i < j ∧
     ∃ h3 : 2 * j.val - i ∈ Set.Icc 1 m,
@@ -49,7 +49,7 @@ abbrev coloring_is_good {m : ℕ} (color : Set.Icc 1 m → Fin 2) : Prop :=
 --かつ、iと2j - i も同じ色に塗られている。
 --最後の ⟨2*j - i, h3⟩ は「2j-i が区間に入っている」という証明付きのペアで、color に入力できる形にしている
 
-abbrev all_colorings_are_good (m : ℕ) : Prop :=
+def all_colorings_are_good (m : ℕ) : Prop :=
   3 ≤ m ∧ ∀ color : Set.Icc 1 m → Fin 2, coloring_is_good color
 --3以上のmに対し、整数の区間 [1, m] を 2 色で塗ると、どんな塗り分け(color)でも必ず
 --i, j, 2j - i が同色になるような組が存在する
@@ -58,10 +58,10 @@ snip begin
 
 lemma lemma1 {m n : ℕ} (hmn : m ≤ n) (hm : all_colorings_are_good m) :
 --lemma1 m ≤ n の仮定、区間 [1, m] に対して、すべての 2 色塗りがgood
-    all_colorings_are_good n := by    --それなら、区間 [1, n] に対してもすべての 2 色塗りがgoodを示す
+  all_colorings_are_good n := by    --それなら、区間 [1, n] に対してもすべての 2 色塗りがgoodを示す
   constructor    --3 ≤ n、任意の彩色 c が coloring_is_goodのペアなのでconstructor で分解
   · exact hm.1.trans hmn    --hm.1 は 3 ≤ m, hmn は m ≤ n なので推移律より 3 ≤ n
-  · intro c   --c : Set.Icc 1 n → Fin 2 は [1, n] の彩色
+  · intro c   --c :Set.Icc 1 n → Fin 2 は [1, n] の彩色
     let c' : Set.Icc 1 m → Fin 2 :=
       fun x ↦ c ⟨x.val, by rw [Set.mem_Icc]; exact ⟨x.prop.1, x.prop.2.trans hmn⟩⟩
     --[1, m] に制限した彩色 c' を作る
@@ -91,15 +91,8 @@ lemma lemma1 {m n : ℕ} (hmn : m ≤ n) (hm : all_colorings_are_good m) :
     use hij2' --よって区間 [1, n] に対してもすべての 2 色塗りがgood
 
 def coloring_of_eight {n : ℕ} : Set.Icc 1 n → Fin 2
-| ⟨1, _⟩ => 0
-| ⟨2, _⟩ => 1
-| ⟨3, _⟩ => 0
-| ⟨4, _⟩ => 1
-| ⟨5, _⟩ => 1
-| ⟨6, _⟩ => 0
-| ⟨7, _⟩ => 1
-| ⟨8, _⟩ => 0
-| _ => 0 -- unreachable  (9以上の部分は0)
+| ⟨1, _⟩ => 0 | ⟨2, _⟩ => 1 | ⟨3, _⟩ => 0 | ⟨4, _⟩ => 1 | ⟨5, _⟩ => 1
+| ⟨6, _⟩ => 0 | ⟨7, _⟩ => 1 | ⟨8, _⟩ => 0 | _ => 0 -- unreachable  (9以上の部分は0)
 --長さ8で、上の例を挙げる(これをcoloring_of_eightとする)
 --⟨k, _⟩ の _ は1 ≤ k ≤ n で、その数が範囲 [1 , n] に含まれているという証拠も
 --含んだペアとして扱う
@@ -151,8 +144,8 @@ problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } solution_valu
       -- claimは主張
       -- (すなわち、x ≠ z かつ y ≠ z ならば、x,yは共にzじゃない方の色なので x = y)
       have fin2_claim : ∀ (x y z : Fin 2), x ≠ z → y ≠ z → x = y := by
-        intro x y z hx hy
-        revert x y z hx hy
+        --intro x y z hx hy
+        --revert x y z hx hy
         decide -- Fin 2 は有限なので計算で証明完了
 
       -- [補題2]：等差数列禁止に関する制約
@@ -167,8 +160,8 @@ problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } solution_valu
         -- goodなものは存在しない という仮定に矛盾することを示す
         refine ⟨⟨i, hi⟩, ⟨j, hj⟩, hij, ?_⟩
         -- 3点目(2j-i)が範囲内にあることの証明
-        have h_idx : 2 * j - i = k := heq
-        refine ⟨h_idx.symm ▸ hk, ?_⟩
+        --have h_idx : 2 * j - i = k := heq
+        refine ⟨heq.symm ▸ hk, ?_⟩
         -- 色が一致することの証明
         simp [c] at h_ci_cj h_ck_cj_eq
         constructor
@@ -176,20 +169,14 @@ problem bulgaria1998_p1 : IsLeast { m | all_colorings_are_good m } solution_valu
         · exact h_ci_cj
         · rw [h_ci_cj, ←h_ck_cj_eq]
           congr
-          exact h_idx.symm
+          exact heq.symm
 
       -- ここから具体的な背理法による探索をするが、fin2_claim と no_apを使って探索していく。
       -- 最初に、1~9 が範囲内であることの証明をあらかじめ用意しておく。
-      let n1 : 1 ∈ Set.Icc 1 9 := by norm_num
-      let n2 : 2 ∈ Set.Icc 1 9 := by norm_num
-      let n3 : 3 ∈ Set.Icc 1 9 := by norm_num
-      let n4 : 4 ∈ Set.Icc 1 9 := by norm_num
-      let n5 : 5 ∈ Set.Icc 1 9 := by norm_num
-      let n6 : 6 ∈ Set.Icc 1 9 := by norm_num
-      let n7 : 7 ∈ Set.Icc 1 9 := by norm_num
-      let n8 : 8 ∈ Set.Icc 1 9 := by norm_num
-      let n9 : 9 ∈ Set.Icc 1 9 := by norm_num
-
+      let mk (n : ℕ) (h : n ∈ Set.Icc 1 9 := by norm_num) := h
+      let n1 := mk 1; let n2 := mk 2; let n3 := mk 3
+      let n4 := mk 4; let n5 := mk 5; let n6 := mk 6
+      let n7 := mk 7; let n8 := mk 8; let n9 := mk 9
       /-順序
       [a] c(3)とc(5)が異なる色であることを示す。
       [b] c(5)とc(7)が異なる色であることを示す。
